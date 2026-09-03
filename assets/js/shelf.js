@@ -1,4 +1,5 @@
-/* Полка: шесть книг лицом, остальные — стопкой. Плюс поиск, жанры и сортировка. */
+/* Полка: семь книг лицом, до пяти следующих — стопкой, остальные (если
+   вдруг наберётся) не показываем вовсе. Плюс поиск, жанры и сортировка. */
 
 import { state, avg, spread, genres, fmtDate, nPlural, nextMeeting, num } from './data.js';
 import { coverHTML, mountCovers, loadedCovers, resetLoadedCovers, esc } from './ui.js';
@@ -7,6 +8,7 @@ import { icon, hydrateIcons } from './icons.js';
 import { openAddBookModal } from './addbook.js';
 
 const FACE_OUT = 7;          // сколько книг стоят лицом, прежде чем начнётся стопка
+const PILE_MAX = 5;          // сколько книг видно в стопке; остальные просто не показываем
 
 const ui = { genre: 'Всё', sort: 'date-desc', query: '', pileOpen: false };
 
@@ -127,7 +129,8 @@ function addSlotHTML() {
 
 function pileHTML(rest) {
   if (!rest.length) return '';
-  const books = rest.map((b, i) => {
+  const shown = rest.slice(0, PILE_MAX);
+  const books = shown.map((b, i) => {
     const jog = (i % 3 - 1) * 6;
     return `<button class="pile-book" data-id="${esc(b.id)}"
         style="--jog:${jog}px"
@@ -142,43 +145,28 @@ function pileHTML(rest) {
   return `<div class="pile">
     <div class="pile-head">
       ${icon('stack')}
-      <span>${nPlural(rest.length, 'книга', 'книги', 'книг')} в стопке</span>
+      <span>${nPlural(shown.length, 'книга', 'книги', 'книг')} в стопке</span>
       <button class="pile-toggle" id="pileToggle">разложить</button>
     </div>
     ${books}
   </div>`;
 }
 
-/* Ряд обложек никогда не скроллится: вместо этого книги подгоняются под
-   доступную ширину плотным нахлёстом. Небольшой нахлёст держим всегда —
-   так ряд выглядит собранным, даже когда места достаточно; если книги
-   всё равно не помещаются, нахлёст растёт, но только до предела, за
-   которым обложки станет неудобно различать и наводить на них курсор —
-   дальше лишние книги просто уходят в стопку, а не сжимаются до нечитаемости. */
+/* Ряд обложек всегда показывает ровно FACE_OUT книг (пока их хватает) и
+   никогда не скроллится по горизонтали: вместо этого книги подгоняются под
+   доступную ширину нахлёстом — небольшим, если места хватает, и заметно
+   плотнее, если нет. Считается ровно один раз на кадр после отрисовки,
+   когда браузер уже знает реальную ширину .shelf-front. */
 const OVERLAP_MIN = 0.18;
-const OVERLAP_MAX = 0.48;
-const MIN_FACE_COUNT = 3;
-
-function frontMetrics(front) {
-  const coverW = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--cover-w')) || 196;
-  const cs = getComputedStyle(front);
-  const available = front.clientWidth - parseFloat(cs.paddingLeft || 0) - parseFloat(cs.paddingRight || 0);
-  return { coverW, available };
-}
-
-/** Сколько книг войдёт в ряд, если держать нахлёст не больше OVERLAP_MAX. */
-function maxFittingCount(front, cap) {
-  const { coverW, available } = frontMetrics(front);
-  if (available <= 0) return cap;
-  const minStep = coverW * (1 - OVERLAP_MAX);
-  const maxCount = 1 + Math.floor((available - coverW) / minStep);
-  return Math.max(MIN_FACE_COUNT, Math.min(cap, maxCount));
-}
+const OVERLAP_MAX = 0.88;   // на узких экранах книги встают внахлёст плотнее, но не пропадают совсем
 
 /** Подгоняет нахлёст между обложками под фактическую ширину ряда. */
 function fitFrontRow(front, count) {
   if (!count) return;
-  const { coverW, available } = frontMetrics(front);
+  const coverW = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--cover-w')) || 196;
+  const cs = getComputedStyle(front);
+  const available = front.clientWidth - parseFloat(cs.paddingLeft || 0) - parseFloat(cs.paddingRight || 0);
+
   let ratio = OVERLAP_MIN;
   if (count > 1 && available > 0) {
     const step = (available - coverW) / (count - 1);
@@ -195,7 +183,14 @@ export function refitShelf() {
   if (front && lastFrontCount) fitFrontRow(front, lastFrontCount);
 }
 
-function buildShelfDOM(shelf, list, faceCount) {
+export function renderShelf() {
+  const shelf = document.getElementById('shelf');
+  const empty = document.getElementById('shelfEmpty');
+  const list = visibleBooks();
+
+  empty.hidden = list.length > 0;
+
+  const faceCount = ui.pileOpen ? list.length : Math.min(FACE_OUT, list.length);
   const front = list.slice(0, faceCount);
   const rest = list.slice(faceCount);
 
@@ -228,39 +223,10 @@ function buildShelfDOM(shelf, list, faceCount) {
 
   document.getElementById('addBookTile')?.addEventListener('click', openAddBookModal);
 
-  return front.length;
-}
-
-export function renderShelf() {
-  const shelf = document.getElementById('shelf');
-  const empty = document.getElementById('shelfEmpty');
-  const list = visibleBooks();
-
-  empty.hidden = list.length > 0;
-
-  const desired = ui.pileOpen ? list.length : Math.min(FACE_OUT, list.length);
-  lastFrontCount = buildShelfDOM(shelf, list, desired);
-
-  // Раскладка ещё не отрисована синхронно с нужными размерами — считаем на
-  // следующем кадре, когда браузер уже знает реальную ширину .shelf-front.
+  lastFrontCount = front.length;
   requestAnimationFrame(() => {
     const frontEl = shelf.querySelector('.shelf-front');
-    if (!frontEl) return;
-
-    if (!ui.pileOpen) {
-      const fits = maxFittingCount(frontEl, desired);
-      if (fits < desired) {
-        // Даже максимальный нахлёст не спасает — лишние книги уходят в стопку,
-        // и ряд собирается заново уже под них.
-        lastFrontCount = buildShelfDOM(shelf, list, fits);
-        requestAnimationFrame(() => {
-          const frontEl2 = shelf.querySelector('.shelf-front');
-          if (frontEl2) fitFrontRow(frontEl2, lastFrontCount);
-        });
-        return;
-      }
-    }
-    fitFrontRow(frontEl, lastFrontCount);
+    if (frontEl) fitFrontRow(frontEl, lastFrontCount);
   });
 }
 

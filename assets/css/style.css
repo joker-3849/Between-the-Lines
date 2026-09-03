@@ -784,8 +784,8 @@ img{max-width:100%;display:block}
 }
 
 /* ── адаптив ──────────────────────────────────────────────────────────── */
-@media (max-width:900px){
-  :root{--cover-w:158px;--cover-h:237px;--edge:18px}
+@media (max-width:1050px){
+  :root{--cover-w:150px;--cover-h:225px;--edge:17px}
   .book-page{grid-template-columns:1fr;gap:30px}
   .bp-left{position:static;max-width:230px}
   .lines-grid{columns:1}
@@ -796,11 +796,18 @@ img{max-width:100%;display:block}
   .pile{margin-left:36px}
   .now-meet{text-align:left}
 }
-@media (max-width:620px){
+/* Ряд книг и стопка делят одну строку и упираются в ширину раньше, чем
+   успевает включиться --cover-w поменьше (см. брейкпоинт на 1050px) —
+   поэтому переходим на вертикальную раскладку на том же пороге, а не на
+   привычных 620px, иначе на ширинах между ними 7 книгам буквально некуда
+   деться даже при максимальном нахлёсте. */
+@media (max-width:1050px){
   .shelf{flex-direction:column;align-items:stretch;gap:34px}
   .add-slot{margin:0;align-self:center}
   .pile{margin:0;align-self:stretch}
   .pile-book{width:100%}
+}
+@media (max-width:620px){
   .mainnav{gap:0}
   .navlink{padding:6px 9px;font-size:12px}
   .imp{grid-template-columns:1fr;gap:10px}
