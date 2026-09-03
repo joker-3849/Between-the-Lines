@@ -11,10 +11,14 @@ export const state = {
 };
 
 export async function loadData() {
-  const [club, books] = await Promise.all([
-    fetch('data/club.json').then(r => r.json()),
-    fetch('data/books.json').then(r => r.json())
-  ]);
+  // Одностраничная сборка кладёт данные прямо в страницу, обычная — читает файлы.
+  const inline = globalThis.__BTL_DATA__;
+  const [club, books] = inline
+    ? [inline.club, inline.books]
+    : await Promise.all([
+        fetch('data/club.json').then(r => r.json()),
+        fetch('data/books.json').then(r => r.json())
+      ]);
   state.club = club;
   state.books = books;
   state.members = club.members;
