@@ -2,9 +2,10 @@
 
 import { loadData } from './data.js';
 import { hydrateIcons } from './icons.js';
-import { initShelf } from './shelf.js';
+import { initShelf, refreshShelf } from './shelf.js';
 import { initBook, showBook, closeBook, currentBookId } from './book.js';
 import { initPages, renderLines, renderChronicle, renderYear } from './pages.js';
+import { initAddBook } from './addbook.js';
 
 const RENDERERS = {
   lines: renderLines,
@@ -70,6 +71,12 @@ function fail(message) {
   initBook({ setView });
   initPages(openBook);
   initShelf(openBook);
+  initAddBook({
+    onAdded: book => {
+      refreshShelf();
+      openBook(book.id);
+    }
+  });
 
   document.getElementById('mainnav').addEventListener('click', e => {
     const b = e.target.closest('[data-view]');

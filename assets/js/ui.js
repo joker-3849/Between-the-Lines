@@ -10,18 +10,16 @@ export const esc = s => String(s ?? '').replace(/[&<>"']/g,
 /* ── обложка ──────────────────────────────────────────────────────────── */
 
 /**
- * Адрес обложки на Open Library по короткому коду книги.
- * Формат поля olCover — «тип:значение», например «isbn:9785170876543»,
- * «olid:OL7353617M» или «id:8231856» (внутренний номер обложки).
- * default=false заставляет сервис отдать 404 вместо пустой заглушки,
- * поэтому неудачный код честно уходит в запасной вариант.
+ * Адрес обложки на Open Library по ISBN издания.
+ * default=false заставляет сервис отдать 404 вместо пустой серой заглушки,
+ * поэтому неверный ISBN честно уходит в запасной вариант, а не показывает
+ * пустое место.
  */
-export function olCoverURL(code) {
-  if (typeof code !== 'string') return null;
-  const m = code.trim().match(/^(id|isbn|olid|lccn|oclc):(.+)$/i);
-  if (!m) return null;
-  return `https://covers.openlibrary.org/b/${m[1].toLowerCase()}/`
-    + `${encodeURIComponent(m[2].trim())}-L.jpg?default=false`;
+export function isbnCoverURL(isbn) {
+  if (typeof isbn !== 'string') return null;
+  const digits = isbn.replace(/[^0-9Xx]/g, '');
+  if (digits.length !== 10 && digits.length !== 13) return null;
+  return `https://covers.openlibrary.org/b/isbn/${digits}-L.jpg?default=false`;
 }
 
 /** В режиме «свои обложки» картинки не запрашиваются вовсе. */
@@ -29,7 +27,7 @@ function coverSources(book) {
   if (settings.get('covers') !== 'real') return [];
   const list = [];
   if (book.cover) list.push(book.cover);
-  const ol = olCoverURL(book.olCover);
+  const ol = isbnCoverURL(book.isbn);
   if (ol) list.push(ol);
   if (Array.isArray(book.coverRemote)) list.push(...book.coverRemote);
   return list;

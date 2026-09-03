@@ -17,7 +17,7 @@
     "proposedBy": "katya",
     "coverQuery": "Мастер и Маргарита Булгаков",
     "cover": "assets/covers/master-i-margarita.jpg",
-    "olCover": null,
+    "isbn": "9780141180144",
     "reviews": {
       "katya": {
         "scores": {
@@ -92,7 +92,7 @@
     "proposedBy": "tanya",
     "coverQuery": "Норвежский лес Мураками",
     "cover": "assets/covers/norvezhskiy-les.jpg",
-    "olCover": null,
+    "isbn": "9780375704024",
     "reviews": {
       "katya": {
         "scores": {
@@ -164,7 +164,7 @@
     "proposedBy": "vova",
     "coverQuery": "Убийство Роджера Экройда Кристи",
     "cover": "assets/covers/roger-ackroyd.jpg",
-    "olCover": null,
+    "isbn": "9780062073563",
     "reviews": {
       "katya": {
         "scores": {
@@ -233,7 +233,7 @@
     "proposedBy": "vova",
     "coverQuery": "Пикник на обочине Стругацкие",
     "cover": "assets/covers/piknik-na-obochine.jpg",
-    "olCover": null,
+    "isbn": "9781613748749",
     "reviews": {
       "katya": {
         "scores": {
@@ -305,7 +305,7 @@
     "proposedBy": "katya",
     "coverQuery": "Щегол Донна Тартт",
     "cover": "assets/covers/shchegol.jpg",
-    "olCover": null,
+    "isbn": "9780316055437",
     "reviews": {
       "katya": {
         "scores": {
@@ -377,7 +377,7 @@
     "proposedBy": "liza",
     "coverQuery": "Слепота Сарамаго",
     "cover": "assets/covers/slepota.jpg",
-    "olCover": null,
+    "isbn": "9780156007757",
     "reviews": {
       "katya": {
         "scores": {
@@ -446,7 +446,7 @@
     "proposedBy": "vova",
     "coverQuery": "Краткая история времени Хокинг",
     "cover": "assets/covers/kratkaya-istoriya-vremeni.jpg",
-    "olCover": null,
+    "isbn": "9780553380163",
     "reviews": {
       "katya": {
         "scores": {
@@ -515,7 +515,7 @@
     "proposedBy": "tanya",
     "coverQuery": "Гордость и предубеждение Остин",
     "cover": "assets/covers/gordost-i-predubezhdenie.jpg",
-    "olCover": null,
+    "isbn": "9780141439518",
     "reviews": {
       "katya": {
         "scores": {
@@ -587,7 +587,7 @@
     "proposedBy": "katya",
     "coverQuery": "Сто лет одиночества Маркес",
     "cover": "assets/covers/sto-let-odinochestva.jpg",
-    "olCover": null,
+    "isbn": "9780060883287",
     "reviews": {
       "katya": {
         "scores": {
@@ -656,7 +656,7 @@
     "proposedBy": "liza",
     "coverQuery": "Все чего я не сказала Селеста Инг",
     "cover": "assets/covers/vse-chego-ya-ne-skazala.jpg",
-    "olCover": null,
+    "isbn": "9780143127550",
     "reviews": {
       "katya": {
         "scores": {
@@ -725,7 +725,7 @@
     "proposedBy": "vova",
     "coverQuery": "Автостопом по галактике Адамс",
     "cover": "assets/covers/avtostopom-po-galaktike.jpg",
-    "olCover": null,
+    "isbn": "9780345391803",
     "reviews": {
       "katya": {
         "scores": {
@@ -794,7 +794,7 @@
     "proposedBy": "liza",
     "coverQuery": "Мы Замятин",
     "cover": "assets/covers/my.jpg",
-    "olCover": null,
+    "isbn": "9780140185855",
     "reviews": {
       "katya": {
         "scores": {

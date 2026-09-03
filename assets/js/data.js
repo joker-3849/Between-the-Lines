@@ -28,6 +28,42 @@ export async function loadData() {
   return state;
 }
 
+/* ── добавление новой книги ──────────────────────────────────────────────
+   Сайт читает данные из JSON в репозитории, поэтому «Добавить книгу» не
+   пишет ни в какой файл сама — она собирает книгу в оперативной памяти,
+   чтобы её сразу можно было посмотреть на полке, и отдаёт готовый JSON
+   для вставки в data/books.json. Черновик живёт до перезагрузки страницы. */
+
+const RU_TO_LAT = {
+  а:'a', б:'b', в:'v', г:'g', д:'d', е:'e', ё:'e', ж:'zh', з:'z', и:'i', й:'y',
+  к:'k', л:'l', м:'m', н:'n', о:'o', п:'p', р:'r', с:'s', т:'t', у:'u', ф:'f',
+  х:'h', ц:'c', ч:'ch', ш:'sh', щ:'sch', ъ:'', ы:'y', ь:'', э:'e', ю:'yu', я:'ya'
+};
+
+export function slugify(title) {
+  const translit = String(title).toLowerCase()
+    .split('').map(ch => RU_TO_LAT[ch] ?? ch).join('');
+  const slug = translit.replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+  return slug || 'kniga';
+}
+
+/** Свободный id: «щегол» → shchegol, а при совпадении — shchegol-2, shchegol-3… */
+export function freeBookId(title) {
+  const base = slugify(title);
+  if (!state.bookById.has(base)) return base;
+  let n = 2;
+  while (state.bookById.has(`${base}-${n}`)) n++;
+  return `${base}-${n}`;
+}
+
+/** Добавляет книгу в текущее состояние страницы (не в файл) и возвращает её. */
+export function addDraftBook(book) {
+  const draft = { ...book, _draft: true };
+  state.books.push(draft);
+  state.bookById.set(draft.id, draft);
+  return draft;
+}
+
 /* ── оценки ───────────────────────────────────────────────────────────── */
 
 /** Все оценки по критерию: [{member, value}] в порядке участников клуба. */
@@ -51,6 +87,8 @@ export function spread(book, critId = 'overall') {
 }
 
 export function verdict(book) {
+  // «Единогласно» имеет смысл только когда есть кого сравнивать между собой.
+  if (scoresFor(book).length < 2) return null;
   const sp = spread(book);
   if (sp >= 4) return { kind: 'split', label: 'спорная' };
   if (sp <= 1) return { kind: 'unison', label: 'единогласно' };

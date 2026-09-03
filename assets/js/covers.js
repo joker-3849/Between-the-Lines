@@ -100,6 +100,28 @@ const MOTIFS = {
 
 export const DEFAULT_ART = { bg: '#1c1a17', fg: '#f0e9db', acc: '#c9a45c', motif: null };
 
+/* Палитры для новых книг, которые ещё не получили собственный подбор цвета
+   вручную. Каждая — самостоятельное, проверенное на контраст сочетание,
+   не привязанное к конкретному сюжету — в отличие от MOTIFS выше, где
+   рисунок выбран под содержание конкретной книги. */
+const PALETTES = [
+  { bg: '#1a1f14', fg: '#eef0df', acc: '#8fae3f' },
+  { bg: '#141b24', fg: '#e4edf4', acc: '#5b8fc7' },
+  { bg: '#24141a', fg: '#f3e3e2', acc: '#c15d5d' },
+  { bg: '#1f1710', fg: '#f2e6d2', acc: '#d99a3e' },
+  { bg: '#141c1a', fg: '#e2f0ea', acc: '#4fae8f' },
+  { bg: '#1c1424', fg: '#ece2f4', acc: '#9b6fd6' },
+  { bg: '#241a10', fg: '#f4e6d6', acc: '#d67a3e' },
+  { bg: '#101820', fg: '#dfe9f0', acc: '#3e9ad6' }
+];
+
+/** Случайное, но всегда читаемое сочетание фона, текста, акцента и мотива. */
+export function randomArt() {
+  const palette = PALETTES[Math.floor(Math.random() * PALETTES.length)];
+  const motif = motifNames()[Math.floor(Math.random() * motifNames().length)];
+  return { ...palette, motif };
+}
+
 /** Инлайн-SVG с рисунком обложки. Пустая строка, если мотив не задан. */
 export function motifSVG(name) {
   const draw = MOTIFS[name];

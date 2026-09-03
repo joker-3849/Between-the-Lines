@@ -4,6 +4,7 @@ import { state, avg, spread, genres, fmtDate, nPlural, nextMeeting, num } from '
 import { coverHTML, mountCovers, artOf, loadedCovers, resetLoadedCovers, esc } from './ui.js';
 import * as settings from './settings.js';
 import { icon, hydrateIcons } from './icons.js';
+import { openAddBookModal } from './addbook.js';
 
 const FACE_OUT = 6;          // сколько книг стоят лицом, прежде чем начнётся стопка
 
@@ -86,8 +87,8 @@ function checkCoversHint() {
     const none = loadedCovers() === 0;
     hint.hidden = !none;
     if (none) {
-      hint.textContent = 'Фотографий настоящих обложек пока нет. Впишите код издания '
-        + 'в поле olCover в data/books.json или запустите tools/fetch-covers.mjs — '
+      hint.textContent = 'Фотографий настоящих обложек пока нет. Проверьте ISBN в поле '
+        + 'isbn в data/books.json или запустите tools/fetch-covers.mjs — '
         + 'до тех пор показываем свои.';
     }
   }, 1600);
@@ -111,6 +112,16 @@ function slotHTML(book) {
         <span>${esc(book.genre)}</span>
       </div>
     </div>
+  </div>`;
+}
+
+function addSlotHTML() {
+  return `<div class="slot add-slot">
+    <button type="button" class="book3d add-book-btn" id="addBookTile"
+      aria-haspopup="dialog" aria-label="Добавить новую книгу на полку">
+      <span class="add-plus">${icon('plus')}</span>
+      <span class="add-label">Добавить<br>книгу</span>
+    </button>
   </div>`;
 }
 
@@ -149,7 +160,7 @@ export function renderShelf() {
   const rest = list.slice(faceCount);
 
   shelf.innerHTML =
-    `<div class="shelf-front">${front.map(slotHTML).join('')}</div>` +
+    `<div class="shelf-front">${front.map(slotHTML).join('')}${addSlotHTML()}</div>` +
     (ui.pileOpen && list.length > FACE_OUT
       ? `<div class="pile"><div class="pile-head">
            ${icon('stack')}<span>стопка разложена</span>
@@ -173,6 +184,14 @@ export function renderShelf() {
     ui.pileOpen = !ui.pileOpen;
     renderShelf();
   });
+
+  document.getElementById('addBookTile')?.addEventListener('click', openAddBookModal);
+}
+
+/** Перерисовать панель и полку после добавления книги — вызывается извне. */
+export function refreshShelf() {
+  renderToolbar();
+  renderShelf();
 }
 
 /** Найти обложку книги на полке — нужно для обратного перелёта при закрытии. */

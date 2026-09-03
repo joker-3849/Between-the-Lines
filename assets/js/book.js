@@ -1,10 +1,11 @@
 /* Страница книги: мнения сгруппированы по критериям, а не по участникам.
    Открывается плавным перелётом обложки с полки (FLIP). */
 
-import { state, avg, spread, verdict, fmtDate, nPlural, num } from './data.js';
+import { state, avg, spread, verdict, scoresFor, fmtDate, nPlural, num } from './data.js';
 import { coverHTML, mountCovers, critHTML, whoHTML, esc, stagger } from './ui.js';
 import { hydrateIcons } from './icons.js';
 import { coverOnShelf } from './shelf.js';
+import { showBookJSON } from './addbook.js';
 
 const reduced = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
@@ -32,13 +33,35 @@ function factsHTML(book) {
     .join('')}</dl>`;
 }
 
+function draftBannerHTML(book) {
+  if (!book._draft) return '';
+  return `<div class="draft-banner">
+    <span class="badge draft">черновик</span>
+    <span>Появилась только на этой странице — ещё не сохранена в data/books.json.</span>
+    <button type="button" class="link" id="showDraftJson">Показать JSON для вставки</button>
+  </div>`;
+}
+
 function verdictHTML(book) {
+  const scores = scoresFor(book);
   const mean = avg(book);
+
+  if (!scores.length) {
+    return `<div class="bp-verdict">
+      <span class="bp-avg bp-avg-empty">—</span>
+      <span class="bp-verdict-note">Мнений пока нет — самое время дозаполнить.</span>
+    </div>`;
+  }
+
   const sp = spread(book);
   const v = verdict(book);
-  const note = sp === 0
-    ? 'Все сошлись на одной оценке — такое случается редко.'
-    : `Оценки разошлись на ${nPlural(sp, 'балл', 'балла', 'баллов')} из ${state.club.scale}.`;
+  const note = scores.length < 1
+    ? ''
+    : scores.length === 1
+      ? `Оценил${scores[0].member.g === 'm' ? '' : 'а'} пока только ${scores[0].member.name}.`
+      : sp === 0
+        ? 'Все сошлись на одной оценке — такое случается редко.'
+        : `Оценки разошлись на ${nPlural(sp, 'балл', 'балла', 'баллов')} из ${state.club.scale}.`;
 
   return `<div class="bp-verdict">
     <span class="bp-avg">${num(mean)}<small>/${state.club.scale}</small></span>
@@ -77,6 +100,7 @@ function takenHTML(book) {
 function render(book) {
   const view = document.getElementById('view-book');
   view.innerHTML = `<article class="book-page">
+    ${draftBannerHTML(book)}
     <div class="bp-left">
       ${coverHTML(book, 'bp-cover')}
       ${factsHTML(book)}
@@ -86,7 +110,7 @@ function render(book) {
       <p class="bp-author">${esc(book.author)}</p>
       ${verdictHTML(book)}
       <h2 class="section-h">Оценки клуба</h2>
-      ${state.criteria.map(c => critHTML(book, c)).join('')}
+      ${state.criteria.map(c => critHTML(book, c)).join('') || '<p class="bp-verdict-note">Пока никто не оценил.</p>'}
       ${impressionsHTML(book)}
       ${takenHTML(book)}
     </div>
@@ -94,6 +118,7 @@ function render(book) {
 
   hydrateIcons(view);
   mountCovers(view);
+  view.querySelector('#showDraftJson')?.addEventListener('click', () => showBookJSON(book));
   return view;
 }
 
