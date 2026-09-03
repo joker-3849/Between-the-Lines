@@ -6,7 +6,7 @@ import * as settings from './settings.js';
 import { icon, hydrateIcons } from './icons.js';
 import { openAddBookModal } from './addbook.js';
 
-const FACE_OUT = 6;          // сколько книг стоят лицом, прежде чем начнётся стопка
+const FACE_OUT = 7;          // сколько книг стоят лицом, прежде чем начнётся стопка
 
 const ui = { genre: 'Всё', sort: 'date-desc', query: '', pileOpen: false };
 
