@@ -300,7 +300,7 @@ img{max-width:100%;display:block}
   width:100%;height:100%;
   border-radius:1px 3px 3px 1px;
   overflow:hidden;
-  background:#191510;
+  background:var(--bg,#1c1a17);
 }
 .cover-img{
   position:absolute;inset:0;
@@ -311,15 +311,23 @@ img{max-width:100%;display:block}
 .cover.has-img .cover-fallback{opacity:0}
 .cover-fallback{
   position:absolute;inset:0;
-  padding:9% 8% 8%;
   display:flex;flex-direction:column;justify-content:space-between;
+  color:var(--fg,#f0e9db);
   transition:opacity .4s var(--ease);
 }
+.cover-art{
+  position:absolute;inset:0;
+  width:100%;height:100%;
+  pointer-events:none;
+}
+.cf-top,.cf-text{position:relative;z-index:1;padding:0 8%}
+.cf-top{padding-top:9%}
+.cf-text{padding-bottom:8%}
 .cover-gloss{
   position:absolute;inset:0;pointer-events:none;
   background:linear-gradient(102deg,rgba(255,255,255,.15),transparent 20%,transparent 84%,rgba(0,0,0,.26));
 }
-.book3d .cover-fallback{padding-right:20%}
+.book3d .cf-top,.book3d .cf-text{padding-right:26%}
 .cf-genre{font-size:.62em;letter-spacing:.15em;text-transform:uppercase;opacity:.6}
 .cf-title{
   font-family:var(--serif);font-weight:500;
@@ -328,14 +336,6 @@ img{max-width:100%;display:block}
 }
 .cf-rule{width:26px;height:1px;background:currentColor;opacity:.42;margin:.7em 0 .55em}
 .cf-author{font-size:.72em;opacity:.72;font-style:italic;font-family:var(--serif)}
-
-/* тона типографской обложки */
-.t0{background:#e7dfcd;color:#141210}
-.t1{background:#16151a;color:#eee7d8}
-.t2{background:#9b9184;color:#100f0d}
-.t3{background:#f2eee4;color:#191713}
-.t4{background:#24262a;color:#e6dfd0}
-.t5{background:#5c4a3a;color:#f0e7d6}
 
 /* ── стопка ───────────────────────────────────────────────────────────── */
 .pile{
@@ -366,6 +366,8 @@ img{max-width:100%;display:block}
   padding:0 16px;
   border-radius:2px;
   text-align:left;
+  background:var(--bg,#1c1a17);
+  color:var(--fg,#f0e9db);
   box-shadow:0 6px 14px rgba(0,0,0,.5);
   transition:transform .35s var(--ease),box-shadow .35s var(--ease),filter .35s var(--ease);
   filter:brightness(.88);

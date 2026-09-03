@@ -1,7 +1,7 @@
 /* Полка: шесть книг лицом, остальные — стопкой. Плюс поиск, жанры и сортировка. */
 
 import { state, avg, spread, genres, fmtDate, nPlural, nextMeeting, num } from './data.js';
-import { coverHTML, mountCovers, esc } from './ui.js';
+import { coverHTML, mountCovers, artOf, esc } from './ui.js';
 import { icon, hydrateIcons } from './icons.js';
 
 const FACE_OUT = 6;          // сколько книг стоят лицом, прежде чем начнётся стопка
@@ -91,8 +91,9 @@ function pileHTML(rest) {
   if (!rest.length) return '';
   const books = rest.map((b, i) => {
     const jog = (i % 3 - 1) * 6;
-    return `<button class="pile-book t${b.tone ?? 0}" data-id="${esc(b.id)}"
-        style="--jog:${jog}px"
+    const art = artOf(b);
+    return `<button class="pile-book" data-id="${esc(b.id)}"
+        style="--jog:${jog}px;--bg:${esc(art.bg)};--fg:${esc(art.fg)};--acc:${esc(art.acc)}"
         aria-label="Открыть карточку: ${esc(b.title)}, ${esc(b.author)}">
       <span class="pb-title">${esc(b.title)}</span>
       <span class="pb-score">${num(avg(b))}</span>

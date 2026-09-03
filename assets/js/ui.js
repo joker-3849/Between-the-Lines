@@ -1,6 +1,7 @@
 /* Общие UI-кирпичики: обложка, аватар участника, шкала оценок. */
 
 import { state, scoresFor, avg, num } from './data.js';
+import { motifSVG, DEFAULT_ART } from './covers.js';
 
 export const esc = s => String(s ?? '').replace(/[&<>"']/g,
   c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -20,14 +21,19 @@ function coverSources(book) {
  */
 export function coverHTML(book, cls = '') {
   const sources = coverSources(book);
-  return `<div class="cover t${book.tone ?? 0} ${cls}"
+  const art = { ...DEFAULT_ART, ...(book.art || {}) };
+  const vars = `--bg:${esc(art.bg)};--fg:${esc(art.fg)};--acc:${esc(art.acc)}`;
+
+  return `<div class="cover ${cls}" style="${vars}"
        data-sources="${esc(JSON.stringify(sources))}">
     <img class="cover-img" alt="Обложка: ${esc(book.title)}" loading="lazy">
     <div class="cover-fallback">
+      ${motifSVG(art.motif)}
       <div class="cf-top">
         <span class="cf-genre">${esc(book.genre || '')}</span>
+        <span class="cf-year">${esc(book.year ?? '')}</span>
       </div>
-      <div>
+      <div class="cf-text">
         <div class="cf-title">${esc(book.title)}</div>
         <div class="cf-rule"></div>
         <div class="cf-author">${esc(book.author)}</div>
@@ -35,6 +41,11 @@ export function coverHTML(book, cls = '') {
     </div>
     <div class="cover-gloss"></div>
   </div>`;
+}
+
+/** Цвета обложки — нужны стопке, где книга видна только корешком. */
+export function artOf(book) {
+  return { ...DEFAULT_ART, ...(book.art || {}) };
 }
 
 /** Подключает загрузку картинок с перебором источников по очереди. */
