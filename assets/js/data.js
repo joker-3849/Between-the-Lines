@@ -67,7 +67,7 @@ export function addDraftBook(book) {
 /* ── оценки ───────────────────────────────────────────────────────────── */
 
 /** Все оценки по критерию: [{member, value}] в порядке участников клуба. */
-export function scoresFor(book, critId) {
+export function scoresFor(book, critId = 'overall') {
   return state.members
     .map(m => ({ member: m, value: book.reviews?.[m.id]?.scores?.[critId] }))
     .filter(s => typeof s.value === 'number');

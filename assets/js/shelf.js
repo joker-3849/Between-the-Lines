@@ -149,19 +149,58 @@ function pileHTML(rest) {
   </div>`;
 }
 
-export function renderShelf() {
-  const shelf = document.getElementById('shelf');
-  const empty = document.getElementById('shelfEmpty');
-  const list = visibleBooks();
+/* Ряд обложек никогда не скроллится: вместо этого книги подгоняются под
+   доступную ширину плотным нахлёстом. Небольшой нахлёст держим всегда —
+   так ряд выглядит собранным, даже когда места достаточно; если книги
+   всё равно не помещаются, нахлёст растёт, но только до предела, за
+   которым обложки станет неудобно различать и наводить на них курсор —
+   дальше лишние книги просто уходят в стопку, а не сжимаются до нечитаемости. */
+const OVERLAP_MIN = 0.18;
+const OVERLAP_MAX = 0.48;
+const MIN_FACE_COUNT = 3;
 
-  empty.hidden = list.length > 0;
+function frontMetrics(front) {
+  const coverW = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--cover-w')) || 196;
+  const cs = getComputedStyle(front);
+  const available = front.clientWidth - parseFloat(cs.paddingLeft || 0) - parseFloat(cs.paddingRight || 0);
+  return { coverW, available };
+}
 
-  const faceCount = ui.pileOpen ? list.length : FACE_OUT;
+/** Сколько книг войдёт в ряд, если держать нахлёст не больше OVERLAP_MAX. */
+function maxFittingCount(front, cap) {
+  const { coverW, available } = frontMetrics(front);
+  if (available <= 0) return cap;
+  const minStep = coverW * (1 - OVERLAP_MAX);
+  const maxCount = 1 + Math.floor((available - coverW) / minStep);
+  return Math.max(MIN_FACE_COUNT, Math.min(cap, maxCount));
+}
+
+/** Подгоняет нахлёст между обложками под фактическую ширину ряда. */
+function fitFrontRow(front, count) {
+  if (!count) return;
+  const { coverW, available } = frontMetrics(front);
+  let ratio = OVERLAP_MIN;
+  if (count > 1 && available > 0) {
+    const step = (available - coverW) / (count - 1);
+    ratio = Math.min(OVERLAP_MAX, Math.max(OVERLAP_MIN, 1 - step / coverW));
+  }
+  front.style.setProperty('--overlap', `${(ratio * coverW).toFixed(1)}px`);
+}
+
+let lastFrontCount = 0;
+
+/** Пересчитать нахлёст под текущую ширину окна — например, после ресайза. */
+export function refitShelf() {
+  const front = document.querySelector('.shelf-front');
+  if (front && lastFrontCount) fitFrontRow(front, lastFrontCount);
+}
+
+function buildShelfDOM(shelf, list, faceCount) {
   const front = list.slice(0, faceCount);
   const rest = list.slice(faceCount);
 
   shelf.innerHTML =
-    `<div class="shelf-front">${front.map(slotHTML).join('')}</div>` +
+    `<div class="shelf-front${ui.pileOpen ? ' expanded' : ''}">${front.map(slotHTML).join('')}</div>` +
     addSlotHTML() +
     (ui.pileOpen && list.length > FACE_OUT
       ? `<div class="pile"><div class="pile-head">
@@ -188,6 +227,41 @@ export function renderShelf() {
   });
 
   document.getElementById('addBookTile')?.addEventListener('click', openAddBookModal);
+
+  return front.length;
+}
+
+export function renderShelf() {
+  const shelf = document.getElementById('shelf');
+  const empty = document.getElementById('shelfEmpty');
+  const list = visibleBooks();
+
+  empty.hidden = list.length > 0;
+
+  const desired = ui.pileOpen ? list.length : Math.min(FACE_OUT, list.length);
+  lastFrontCount = buildShelfDOM(shelf, list, desired);
+
+  // Раскладка ещё не отрисована синхронно с нужными размерами — считаем на
+  // следующем кадре, когда браузер уже знает реальную ширину .shelf-front.
+  requestAnimationFrame(() => {
+    const frontEl = shelf.querySelector('.shelf-front');
+    if (!frontEl) return;
+
+    if (!ui.pileOpen) {
+      const fits = maxFittingCount(frontEl, desired);
+      if (fits < desired) {
+        // Даже максимальный нахлёст не спасает — лишние книги уходят в стопку,
+        // и ряд собирается заново уже под них.
+        lastFrontCount = buildShelfDOM(shelf, list, fits);
+        requestAnimationFrame(() => {
+          const frontEl2 = shelf.querySelector('.shelf-front');
+          if (frontEl2) fitFrontRow(frontEl2, lastFrontCount);
+        });
+        return;
+      }
+    }
+    fitFrontRow(frontEl, lastFrontCount);
+  });
 }
 
 /** Перерисовать панель и полку после добавления книги — вызывается извне. */
@@ -237,5 +311,11 @@ export function initShelf(openBook) {
     settings.set('covers', b.dataset.covers);
     renderToolbar();
     renderShelf();
+  });
+
+  let resizeT;
+  window.addEventListener('resize', () => {
+    clearTimeout(resizeT);
+    resizeT = setTimeout(refitShelf, 120);
   });
 }
