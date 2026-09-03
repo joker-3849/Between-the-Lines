@@ -1,7 +1,7 @@
 /* Полка: шесть книг лицом, остальные — стопкой. Плюс поиск, жанры и сортировка. */
 
 import { state, avg, spread, genres, fmtDate, nPlural, nextMeeting, num } from './data.js';
-import { coverHTML, mountCovers, artOf, loadedCovers, resetLoadedCovers, esc } from './ui.js';
+import { coverHTML, mountCovers, loadedCovers, resetLoadedCovers, esc } from './ui.js';
 import * as settings from './settings.js';
 import { icon, hydrateIcons } from './icons.js';
 import { openAddBookModal } from './addbook.js';
@@ -129,10 +129,11 @@ function pileHTML(rest) {
   if (!rest.length) return '';
   const books = rest.map((b, i) => {
     const jog = (i % 3 - 1) * 6;
-    const art = artOf(b);
     return `<button class="pile-book" data-id="${esc(b.id)}"
-        style="--jog:${jog}px;--bg:${esc(art.bg)};--fg:${esc(art.fg)};--acc:${esc(art.acc)}"
+        style="--jog:${jog}px"
         aria-label="Открыть карточку: ${esc(b.title)}, ${esc(b.author)}">
+      ${coverHTML(b, 'pile-cover')}
+      <span class="pile-scrim" aria-hidden="true"></span>
       <span class="pb-title">${esc(b.title)}</span>
       <span class="pb-score">${num(avg(b))}</span>
     </button>`;
@@ -160,7 +161,8 @@ export function renderShelf() {
   const rest = list.slice(faceCount);
 
   shelf.innerHTML =
-    `<div class="shelf-front">${front.map(slotHTML).join('')}${addSlotHTML()}</div>` +
+    `<div class="shelf-front">${front.map(slotHTML).join('')}</div>` +
+    addSlotHTML() +
     (ui.pileOpen && list.length > FACE_OUT
       ? `<div class="pile"><div class="pile-head">
            ${icon('stack')}<span>стопка разложена</span>
