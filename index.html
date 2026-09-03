@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Between the Lines — книжный клуб</title>
+<meta name="description" content="Полка книжного клуба Between the Lines: что мы прочли и что об этом думаем.">
+<meta name="color-scheme" content="dark">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400;1,500&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+
+<div class="grain" aria-hidden="true"></div>
+
+<header class="topbar" id="topbar">
+  <button class="topbar-back" id="backBtn" hidden aria-label="Вернуться на полку">
+    <span class="ic" data-icon="arrow-left"></span><span>На полку</span>
+  </button>
+  <a class="wordmark" href="#" data-view="shelf">Between<span class="wm-the"> the </span>Lines</a>
+  <nav class="mainnav" id="mainnav" aria-label="Разделы">
+    <button data-view="shelf" class="navlink is-active">Полка</button>
+    <button data-view="lines" class="navlink">Между строк</button>
+    <button data-view="chronicle" class="navlink">Хроника</button>
+    <button data-view="year" class="navlink">Итоги года</button>
+  </nav>
+</header>
+
+<main id="app">
+
+  <!-- ─────────────── ПОЛКА ─────────────── -->
+  <section class="view" id="view-shelf" data-view="shelf">
+    <div class="hero">
+      <h1 class="hero-title">Between<span class="hero-the"> the </span>Lines</h1>
+      <p class="hero-tagline" id="heroTagline"></p>
+      <p class="hero-ledger" id="heroLedger"></p>
+    </div>
+
+    <div class="now" id="now" hidden>
+      <div class="now-label"><span class="ic" data-icon="bookmark"></span> Сейчас читаем</div>
+      <div class="now-body">
+        <p class="now-title" id="nowTitle"></p>
+        <p class="now-author" id="nowAuthor"></p>
+      </div>
+      <div class="now-meet">
+        <span class="now-date" id="nowDate"></span>
+        <span class="now-countdown" id="nowCountdown"></span>
+      </div>
+    </div>
+
+    <div class="toolbar" id="toolbar">
+      <div class="tb-search">
+        <span class="ic" data-icon="search"></span>
+        <input type="search" id="search" placeholder="Название или автор" aria-label="Поиск по полке" autocomplete="off">
+      </div>
+      <div class="tb-genres" id="genres" role="group" aria-label="Фильтр по жанру"></div>
+      <div class="tb-sort">
+        <span class="ic" data-icon="sort"></span>
+        <label class="visually-hidden" for="sort">Сортировка</label>
+        <select id="sort">
+          <option value="date-desc">Сначала последние</option>
+          <option value="date-asc">Сначала первые</option>
+          <option value="score-desc">По оценке клуба</option>
+          <option value="spread-desc">По разбросу мнений</option>
+          <option value="year-asc">По году издания</option>
+          <option value="pages-desc">По объёму</option>
+          <option value="title-asc">По алфавиту</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="shelf-wrap">
+      <div class="shelf" id="shelf"></div>
+      <div class="shelf-plank" aria-hidden="true"></div>
+      <p class="shelf-empty" id="shelfEmpty" hidden>Ничего не нашлось. Попробуйте другой запрос или жанр.</p>
+    </div>
+  </section>
+
+  <!-- ─────────────── КНИГА ─────────────── -->
+  <section class="view" id="view-book" data-view="book" hidden></section>
+
+  <!-- ─────────────── МЕЖДУ СТРОК ─────────────── -->
+  <section class="view" id="view-lines" data-view="lines" hidden></section>
+
+  <!-- ─────────────── ХРОНИКА ─────────────── -->
+  <section class="view" id="view-chronicle" data-view="chronicle" hidden></section>
+
+  <!-- ─────────────── ИТОГИ ГОДА ─────────────── -->
+  <section class="view" id="view-year" data-view="year" hidden></section>
+
+</main>
+
+<footer class="site-foot">
+  <p id="footNote"></p>
+</footer>
+
+<!-- слой для FLIP-перелёта обложки -->
+<div class="flip-layer" id="flipLayer" aria-hidden="true"></div>
+
+<script type="module" src="assets/js/app.js"></script>
+</body>
+</html>

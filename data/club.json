@@ -1,0 +1,80 @@
+{
+  "name": "Between the Lines",
+  "tagline": "Полка книжного клуба: всё, что мы прочли, и что каждая из нас об этом думает.",
+  "since": 2023,
+  "cadenceLabel": "встречаемся раз в две недели, по четвергам",
+  "cadenceDays": 14,
+  "nextMeeting": "2026-09-11",
+  "currentlyReading": {
+    "title": "Дневник плохого года",
+    "author": "Дж. М. Кутзее"
+  },
+  "scale": 10,
+  "members": [
+    {
+      "id": "katya",
+      "name": "Катя",
+      "initial": "К",
+      "color": "#d9a94c",
+      "g": "f"
+    },
+    {
+      "id": "liza",
+      "name": "Лиза",
+      "initial": "Л",
+      "color": "#dd8f7e",
+      "g": "f"
+    },
+    {
+      "id": "tanya",
+      "name": "Таня",
+      "initial": "Т",
+      "color": "#8db39a",
+      "g": "f"
+    },
+    {
+      "id": "vova",
+      "name": "Вова",
+      "initial": "В",
+      "color": "#8f9fd4",
+      "g": "m"
+    }
+  ],
+  "criteria": [
+    {
+      "id": "overall",
+      "label": "Общая оценка",
+      "lead": true
+    },
+    {
+      "id": "plot",
+      "label": "Сюжет"
+    },
+    {
+      "id": "style",
+      "label": "Язык"
+    },
+    {
+      "id": "characters",
+      "label": "Персонажи"
+    },
+    {
+      "id": "atmosphere",
+      "label": "Атмосфера"
+    }
+  ],
+  "yearHighlights": {
+    "2025": {
+      "lineOfTheYear": {
+        "bookId": "slepota",
+        "memberId": "liza"
+      }
+    },
+    "2026": {
+      "lineOfTheYear": {
+        "bookId": "my",
+        "memberId": "tanya"
+      }
+    }
+  }
+}

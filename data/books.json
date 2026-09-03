@@ -1,0 +1,434 @@
+[
+  {
+    "id": "master-i-margarita",
+    "title": "Мастер и Маргарита",
+    "author": "Михаил Булгаков",
+    "year": 1967,
+    "pages": 480,
+    "genre": "Классика",
+    "edition": "АСТ, 2019",
+    "tone": 1,
+    "discussed": "2025-02-13",
+    "proposedBy": "katya",
+    "coverQuery": "Мастер и Маргарита Булгаков",
+    "cover": "assets/covers/master-i-margarita.jpg",
+    "reviews": {
+      "katya": {
+        "scores": { "overall": 9, "plot": 8, "style": 10, "characters": 9, "atmosphere": 10 },
+        "text": "Перечитывала третий раз и впервые заметила, как тихо сделаны ершалаимские главы — там нет ни одного лишнего слова. Москва рядом с ними нарочно шумная, и от этого контраста всё держится.",
+        "line": { "kind": "book", "text": "Рукописи не горят." }
+      },
+      "liza": {
+        "scores": { "overall": 10, "plot": 9, "style": 10, "characters": 10, "atmosphere": 10 },
+        "text": "Три пласта сходятся без единого шва — это редчайшая инженерия. Свита Воланда смешна ровно настолько, чтобы страшное осталось страшным.",
+        "line": { "kind": "club", "text": "Сатира здесь не смягчает ужас, а делает его переносимым ровно на один вечер." }
+      },
+      "tanya": {
+        "scores": { "overall": 9, "plot": 9, "style": 9, "characters": 10, "atmosphere": 9 },
+        "text": "Каждый раз болею за Маргариту и каждый раз забываю, какая она страшная в сцене разгрома. Книга не даёт себя запомнить целиком, и в этом её фокус.",
+        "line": null
+      },
+      "vova": {
+        "scores": { "overall": 9, "plot": 7, "style": 10, "characters": 8, "atmosphere": 9 },
+        "text": "Линия Мастера рядом с московскими главами всё-таки бледнее задуманного. Но язык такой, что спорить с романом не хочется — хочется его цитировать.",
+        "line": { "kind": "club", "text": "Спорили весь вечер, кто здесь главный герой. Сошлись на том, что город." }
+      }
+    }
+  },
+  {
+    "id": "norvezhskiy-les",
+    "title": "Норвежский лес",
+    "author": "Харуки Мураками",
+    "year": 1987,
+    "pages": 384,
+    "genre": "Роман",
+    "edition": "Эксмо, 2020",
+    "tone": 0,
+    "discussed": "2025-03-27",
+    "proposedBy": "tanya",
+    "coverQuery": "Норвежский лес Мураками",
+    "cover": "assets/covers/norvezhskiy-les.jpg",
+    "reviews": {
+      "katya": {
+        "scores": { "overall": 8, "plot": 6, "style": 9, "characters": 8, "atmosphere": 9 },
+        "text": "Точная интонация: тишина между репликами говорит больше самих реплик. Сюжета почти нет, и он тут не нужен.",
+        "line": { "kind": "club", "text": "Книга не про любовь, а про то, как долго человек умеет ждать самого себя." }
+      },
+      "liza": {
+        "scores": { "overall": 6, "plot": 5, "style": 8, "characters": 4, "atmosphere": 9 },
+        "text": "Женские персонажи существуют в основном как отражения рассказчика. Атмосфера прекрасная, конструкция — нет.",
+        "line": null
+      },
+      "tanya": {
+        "scores": { "overall": 9, "plot": 7, "style": 9, "characters": 9, "atmosphere": 10 },
+        "text": "Читала за две ночи и всё время слышала дождь. Мне не нужно было, чтобы там что-то происходило.",
+        "line": null
+      },
+      "vova": {
+        "scores": { "overall": 5, "plot": 4, "style": 7, "characters": 5, "atmosphere": 8 },
+        "text": "Половина клуба назвала книгу нежной, половина — холодной. Я за холодную: герой всю дорогу разглядывает своё горе в зеркале.",
+        "line": { "kind": "club", "text": "Меланхолия — не то же самое, что глубина, хотя выглядят они одинаково." }
+      }
+    }
+  },
+  {
+    "id": "roger-ackroyd",
+    "title": "Убийство Роджера Экройда",
+    "author": "Агата Кристи",
+    "year": 1926,
+    "pages": 288,
+    "genre": "Детектив",
+    "edition": "Эксмо, 2018",
+    "tone": 3,
+    "discussed": "2025-05-08",
+    "proposedBy": "vova",
+    "coverQuery": "Убийство Роджера Экройда Кристи",
+    "cover": "assets/covers/roger-ackroyd.jpg",
+    "reviews": {
+      "katya": {
+        "scores": { "overall": 7, "plot": 10, "style": 6, "characters": 6, "atmosphere": 7 },
+        "text": "Развязка честная: все подсказки лежат на виду, и от этого обиднее всего.",
+        "line": null
+      },
+      "liza": {
+        "scores": { "overall": 8, "plot": 10, "style": 7, "characters": 6, "atmosphere": 7 },
+        "text": "Идеально собранный механизм. Второстепенные герои держатся на одной черте характера, но здесь это не изъян, а экономия.",
+        "line": { "kind": "club", "text": "Хороший детектив обманывает не читателя, а его самоуверенность." }
+      },
+      "tanya": {
+        "scores": { "overall": 8, "plot": 9, "style": 7, "characters": 7, "atmosphere": 8 },
+        "text": "Единственная встреча, где мы полчаса листали книгу назад и проверяли, не соврала ли она нам. Не соврала.",
+        "line": null
+      },
+      "vova": {
+        "scores": { "overall": 8, "plot": 10, "style": 6, "characters": 6, "atmosphere": 7 },
+        "text": "Никто не угадал. Один человек утверждает обратное, доказательств не предъявил.",
+        "line": null
+      }
+    }
+  },
+  {
+    "id": "piknik-na-obochine",
+    "title": "Пикник на обочине",
+    "author": "Аркадий и Борис Стругацкие",
+    "year": 1972,
+    "pages": 224,
+    "genre": "Фантастика",
+    "edition": "АСТ, 2021",
+    "tone": 4,
+    "discussed": "2025-06-19",
+    "proposedBy": "vova",
+    "coverQuery": "Пикник на обочине Стругацкие",
+    "cover": "assets/covers/piknik-na-obochine.jpg",
+    "reviews": {
+      "katya": {
+        "scores": { "overall": 8, "plot": 8, "style": 8, "characters": 9, "atmosphere": 10 },
+        "text": "Зона страшна тем, что она равнодушна. Никакого злого умысла — просто мусор, оставленный после привала.",
+        "line": { "kind": "club", "text": "Самое жуткое в Зоне — что она никого не имела в виду." }
+      },
+      "liza": {
+        "scores": { "overall": 9, "plot": 8, "style": 9, "characters": 9, "atmosphere": 10 },
+        "text": "Двести страниц, и ни одной впустую. Смена оптики между частями сделана так, что финал невозможно предугадать заранее.",
+        "line": null
+      },
+      "tanya": {
+        "scores": { "overall": 9, "plot": 8, "style": 9, "characters": 10, "atmosphere": 10 },
+        "text": "Рэдрик — редкий случай, когда герой мне не нравится и я всё равно за него держусь до последней строчки.",
+        "line": null
+      },
+      "vova": {
+        "scores": { "overall": 9, "plot": 9, "style": 9, "characters": 9, "atmosphere": 10 },
+        "text": "Лучшее из того, что мы читали в жанре. Финальный монолог работает именно потому, что к нему не готовили.",
+        "line": { "kind": "club", "text": "Фантастика здесь — не про чужих, а про то, что мы делаем с непонятным." }
+      }
+    }
+  },
+  {
+    "id": "shchegol",
+    "title": "Щегол",
+    "author": "Донна Тартт",
+    "year": 2013,
+    "pages": 832,
+    "genre": "Роман",
+    "edition": "АСТ, Corpus, 2015",
+    "tone": 2,
+    "discussed": "2025-08-07",
+    "proposedBy": "katya",
+    "coverQuery": "Щегол Донна Тартт",
+    "cover": "assets/covers/shchegol.jpg",
+    "reviews": {
+      "katya": {
+        "scores": { "overall": 9, "plot": 8, "style": 9, "characters": 10, "atmosphere": 9 },
+        "text": "Восемьсот страниц, и я бы взяла ещё двести. Тартт умеет писать вещи так, что они помнят своих хозяев.",
+        "line": { "kind": "club", "text": "Мы держимся за предметы, потому что они переживут нас и подтвердят, что мы были." }
+      },
+      "liza": {
+        "scores": { "overall": 4, "plot": 3, "style": 7, "characters": 5, "atmosphere": 6 },
+        "text": "Роман, который можно сократить вдвое без потерь. Средняя треть буксует, а к финалу автор объясняет то, что уже было показано.",
+        "line": null
+      },
+      "tanya": {
+        "scores": { "overall": 8, "plot": 7, "style": 9, "characters": 9, "atmosphere": 8 },
+        "text": "Читала месяц и не жалею ни об одном дне. Борис — лучший персонаж полки за год.",
+        "line": null
+      },
+      "vova": {
+        "scores": { "overall": 3, "plot": 3, "style": 6, "characters": 5, "atmosphere": 5 },
+        "text": "Роман взросления, растянутый до размера мебели. Каждая эмоция проговаривается трижды, на случай если читатель отвлёкся.",
+        "line": { "kind": "club", "text": "Толщина книги — это не глубина, это просто толщина." }
+      }
+    }
+  },
+  {
+    "id": "slepota",
+    "title": "Слепота",
+    "author": "Жозе Сарамаго",
+    "year": 1995,
+    "pages": 352,
+    "genre": "Роман",
+    "edition": "Эксмо, 2017",
+    "tone": 4,
+    "discussed": "2025-09-18",
+    "proposedBy": "liza",
+    "coverQuery": "Слепота Сарамаго",
+    "cover": "assets/covers/slepota.jpg",
+    "reviews": {
+      "katya": {
+        "scores": { "overall": 9, "plot": 8, "style": 9, "characters": 8, "atmosphere": 10 },
+        "text": "Отсутствие имён превращает частную катастрофу в общую. К середине я поймала себя на том, что читаю быстрее, лишь бы это закончилось.",
+        "line": null
+      },
+      "liza": {
+        "scores": { "overall": 10, "plot": 9, "style": 10, "characters": 9, "atmosphere": 10 },
+        "text": "Проза без абзацев работает как нарастающее давление: воздуха всё меньше именно потому, что негде остановиться.",
+        "line": { "kind": "club", "text": "Слепота здесь не про глаза. Она про то, как быстро люди договариваются не смотреть." }
+      },
+      "tanya": {
+        "scores": { "overall": 7, "plot": 7, "style": 8, "characters": 8, "atmosphere": 10 },
+        "text": "Единственная книга, после которой мы сделали паузу на две недели. Мне было физически тяжело, и я до сих пор не уверена, что рада этому опыту.",
+        "line": null
+      },
+      "vova": {
+        "scores": { "overall": 8, "plot": 8, "style": 9, "characters": 7, "atmosphere": 10 },
+        "text": "Притча, которая не морализирует, — редкость. Автор ни разу не выходит объяснить, что он имел в виду.",
+        "line": null
+      }
+    }
+  },
+  {
+    "id": "kratkaya-istoriya-vremeni",
+    "title": "Краткая история времени",
+    "author": "Стивен Хокинг",
+    "year": 1988,
+    "pages": 256,
+    "genre": "Нон-фикшн",
+    "edition": "АСТ, 2019",
+    "tone": 5,
+    "discussed": "2025-10-30",
+    "proposedBy": "vova",
+    "coverQuery": "Краткая история времени Хокинг",
+    "cover": "assets/covers/kratkaya-istoriya-vremeni.jpg",
+    "reviews": {
+      "katya": {
+        "scores": { "overall": 6, "plot": 5, "style": 6, "characters": 4, "atmosphere": 7 },
+        "text": "Первые главы понятны, дальше я честно потерялась и дочитывала на упрямстве.",
+        "line": null
+      },
+      "liza": {
+        "scores": { "overall": 7, "plot": 7, "style": 7, "characters": 4, "atmosphere": 7 },
+        "text": "Идеально выстроенное объяснение до главы про чёрные дыры и заметно более торопливое после.",
+        "line": null
+      },
+      "tanya": {
+        "scores": { "overall": 7, "plot": 6, "style": 7, "characters": 5, "atmosphere": 8 },
+        "text": "Взяла карандаш впервые за год. Половину не поняла, но та половина, что поняла, того стоила.",
+        "line": { "kind": "club", "text": "Приятно иногда читать книгу, которая умнее тебя и не делает вид, что это не так." }
+      },
+      "vova": {
+        "scores": { "overall": 8, "plot": 7, "style": 8, "characters": 5, "atmosphere": 8 },
+        "text": "Лучший научпоп именно потому, что автор не заигрывает с читателем и не боится оставить его в недоумении.",
+        "line": null
+      }
+    }
+  },
+  {
+    "id": "gordost-i-predubezhdenie",
+    "title": "Гордость и предубеждение",
+    "author": "Джейн Остин",
+    "year": 1813,
+    "pages": 416,
+    "genre": "Классика",
+    "edition": "Азбука, 2020",
+    "tone": 3,
+    "discussed": "2025-12-11",
+    "proposedBy": "tanya",
+    "coverQuery": "Гордость и предубеждение Остин",
+    "cover": "assets/covers/gordost-i-predubezhdenie.jpg",
+    "reviews": {
+      "katya": {
+        "scores": { "overall": 9, "plot": 8, "style": 10, "characters": 10, "atmosphere": 8 },
+        "text": "Диалоги, которым двести лет и которые до сих пор быстрее и злее, чем у большинства современных романов.",
+        "line": { "kind": "book", "text": "Общепризнанная истина гласит, что холостяку, располагающему приличным состоянием, надлежит подыскивать себе жену." }
+      },
+      "liza": {
+        "scores": { "overall": 8, "plot": 8, "style": 9, "characters": 9, "atmosphere": 7 },
+        "text": "Комедия нравов с безупречной композицией: каждое письмо в романе меняет расстановку сил.",
+        "line": null
+      },
+      "tanya": {
+        "scores": { "overall": 10, "plot": 9, "style": 10, "characters": 10, "atmosphere": 9 },
+        "text": "Моя любимая книга на этой полке, и я не собираюсь притворяться объективной.",
+        "line": { "kind": "club", "text": "Остин не обещает счастья — она обещает, что глупость будет названа глупостью." }
+      },
+      "vova": {
+        "scores": { "overall": 5, "plot": 5, "style": 8, "characters": 7, "atmosphere": 6 },
+        "text": "Признаю мастерство и остаюсь равнодушным. Ставки романа для меня слишком малы, чтобы за них переживать.",
+        "line": null
+      }
+    }
+  },
+  {
+    "id": "sto-let-odinochestva",
+    "title": "Сто лет одиночества",
+    "author": "Габриэль Гарсиа Маркес",
+    "year": 1967,
+    "pages": 480,
+    "genre": "Классика",
+    "edition": "АСТ, 2022",
+    "tone": 2,
+    "discussed": "2026-01-22",
+    "proposedBy": "katya",
+    "coverQuery": "Сто лет одиночества Маркес",
+    "cover": "assets/covers/sto-let-odinochestva.jpg",
+    "reviews": {
+      "katya": {
+        "scores": { "overall": 8, "plot": 7, "style": 10, "characters": 8, "atmosphere": 10 },
+        "text": "Плотность образов на страницу — рекорд полки. Без схемы имён к четвёртому поколению я потерялась окончательно.",
+        "line": null
+      },
+      "liza": {
+        "scores": { "overall": 9, "plot": 8, "style": 10, "characters": 8, "atmosphere": 10 },
+        "text": "Повторяющиеся имена — не небрежность, а приём: род ходит по кругу, и читатель ходит вместе с ним.",
+        "line": { "kind": "club", "text": "Одиночество в этом романе передаётся по наследству вернее, чем фамилия." }
+      },
+      "tanya": {
+        "scores": { "overall": 9, "plot": 8, "style": 10, "characters": 9, "atmosphere": 10 },
+        "text": "Рисовали генеалогическое древо прямо на встрече, на обороте меню. Оно у меня до сих пор лежит в книге вместо закладки.",
+        "line": null
+      },
+      "vova": {
+        "scores": { "overall": 7, "plot": 6, "style": 10, "characters": 7, "atmosphere": 9 },
+        "text": "Восхищаюсь языком и устал от бесконечности. К третьей сотне страниц чудеса перестают удивлять — а это, наверное, и был замысел.",
+        "line": null
+      }
+    }
+  },
+  {
+    "id": "vse-chego-ya-ne-skazala",
+    "title": "Все, чего я не сказала",
+    "author": "Селеста Инг",
+    "year": 2014,
+    "pages": 320,
+    "genre": "Роман",
+    "edition": "Фантом Пресс, 2017",
+    "tone": 0,
+    "discussed": "2026-03-05",
+    "proposedBy": "liza",
+    "coverQuery": "Все чего я не сказала Селеста Инг",
+    "cover": "assets/covers/vse-chego-ya-ne-skazala.jpg",
+    "reviews": {
+      "katya": {
+        "scores": { "overall": 8, "plot": 8, "style": 7, "characters": 9, "atmosphere": 8 },
+        "text": "Роман о том, как родительская любовь становится грузом ровно тогда, когда она искреннее всего.",
+        "line": { "kind": "club", "text": "Молчание в семье — это не пустота, это очень плотно упакованный разговор." }
+      },
+      "liza": {
+        "scores": { "overall": 6, "plot": 6, "style": 6, "characters": 8, "atmosphere": 7 },
+        "text": "Приём с раскрытием тайны через смену точек зрения работает, но к середине становится предсказуемым.",
+        "line": null
+      },
+      "tanya": {
+        "scores": { "overall": 9, "plot": 8, "style": 8, "characters": 10, "atmosphere": 8 },
+        "text": "Плакала на главе про мать. Самая живая семья, которую мы читали за два года.",
+        "line": null
+      },
+      "vova": {
+        "scores": { "overall": 6, "plot": 6, "style": 6, "characters": 7, "atmosphere": 7 },
+        "text": "Аккуратная, честная книга без единого риска. Ровно то, что обещает обложка, — и ни строчкой больше.",
+        "line": null
+      }
+    }
+  },
+  {
+    "id": "avtostopom-po-galaktike",
+    "title": "Автостопом по галактике",
+    "author": "Дуглас Адамс",
+    "year": 1979,
+    "pages": 224,
+    "genre": "Фантастика",
+    "edition": "АСТ, 2018",
+    "tone": 1,
+    "discussed": "2026-05-28",
+    "proposedBy": "vova",
+    "coverQuery": "Автостопом по галактике Адамс",
+    "cover": "assets/covers/avtostopom-po-galaktike.jpg",
+    "reviews": {
+      "katya": {
+        "scores": { "overall": 6, "plot": 4, "style": 8, "characters": 6, "atmosphere": 7 },
+        "text": "Шутки отличные, но к концу я перестала понимать, зачем всё это происходит и происходит ли вообще.",
+        "line": null
+      },
+      "liza": {
+        "scores": { "overall": 5, "plot": 3, "style": 8, "characters": 5, "atmosphere": 7 },
+        "text": "Сюжет держится на честном слове и заканчивается там, где устал автор. Как сборник скетчей — блестяще, как роман — никак.",
+        "line": null
+      },
+      "tanya": {
+        "scores": { "overall": 9, "plot": 6, "style": 9, "characters": 9, "atmosphere": 9 },
+        "text": "Самая лёгкая встреча сезона. Смеялась в метро и мне было не стыдно.",
+        "line": { "kind": "club", "text": "Книга, которая всерьёз утверждает, что паника — единственная неправильная реакция на вселенную." }
+      },
+      "vova": {
+        "scores": { "overall": 9, "plot": 5, "style": 10, "characters": 8, "atmosphere": 9 },
+        "text": "Шутка на абзац, и почти каждая работает спустя сорок лет. Претензии к сюжету предъявлять некому: его тут и не обещали.",
+        "line": null
+      }
+    }
+  },
+  {
+    "id": "my",
+    "title": "Мы",
+    "author": "Евгений Замятин",
+    "year": 1924,
+    "pages": 224,
+    "genre": "Фантастика",
+    "edition": "Азбука, 2021",
+    "tone": 5,
+    "discussed": "2026-07-09",
+    "proposedBy": "liza",
+    "coverQuery": "Мы Замятин",
+    "cover": "assets/covers/my.jpg",
+    "reviews": {
+      "katya": {
+        "scores": { "overall": 8, "plot": 7, "style": 9, "characters": 7, "atmosphere": 10 },
+        "text": "Язык дневника, который сам себя выдаёт: герой пишет отчёт, а получается признание.",
+        "line": null
+      },
+      "liza": {
+        "scores": { "overall": 9, "plot": 8, "style": 10, "characters": 7, "atmosphere": 10 },
+        "text": "Всё, что потом сделали Оруэлл и Хаксли, здесь уже собрано — и собрано плотнее, на двухстах страницах.",
+        "line": null
+      },
+      "tanya": {
+        "scores": { "overall": 8, "plot": 8, "style": 9, "characters": 8, "atmosphere": 10 },
+        "text": "Стеклянный город снится мне до сих пор. Обсуждали дольше всех книг этого года.",
+        "line": { "kind": "club", "text": "Страшнее всего не то, что за героем следят. Страшно, что ему это удобно." }
+      },
+      "vova": {
+        "scores": { "overall": 9, "plot": 8, "style": 10, "characters": 7, "atmosphere": 10 },
+        "text": "Написано в двадцать четвёртом году и читается как репортаж. Персонажи схематичны, но здесь схема — часть высказывания.",
+        "line": null
+      }
+    }
+  }
+]
