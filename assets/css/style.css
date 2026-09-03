@@ -202,6 +202,31 @@ img{max-width:100%;display:block}
 .tb-sort select:hover{color:var(--ink)}
 .tb-sort option{background:#16130f;color:var(--ink)}
 
+/* переключатель обложек */
+.tb-covers{
+  display:flex;align-items:center;gap:8px;
+  margin-left:auto;
+  color:var(--faint);
+  border:1px solid var(--rule);border-radius:999px;
+  padding:3px 4px 3px 12px;
+}
+.seg{
+  font-size:12px;letter-spacing:.03em;color:var(--dim);
+  padding:5px 12px;border-radius:999px;
+  transition:color .2s var(--ease),background .2s var(--ease);
+  white-space:nowrap;
+}
+.seg:hover{color:var(--ink)}
+.seg[aria-pressed="true"]{color:var(--void);background:var(--ink)}
+
+.covers-hint{
+  max-width:var(--maxw);
+  margin:14px auto 0;padding:0 var(--pad);
+  text-align:right;
+  font-size:12px;line-height:1.6;color:var(--faint);
+}
+.covers-hint[hidden]{display:none}
+
 /* ── полка ────────────────────────────────────────────────────────────── */
 .shelf-wrap{
   position:relative;

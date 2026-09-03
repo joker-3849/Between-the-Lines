@@ -9,6 +9,8 @@
  *
  *   node tools/fetch-covers.mjs                  — скачать всё, чего ещё нет
  *   node tools/fetch-covers.mjs --force          — перекачать заново
+ *   node tools/fetch-covers.mjs --codes          — не качать файлы, а вписать
+ *                                                  коды обложек в books.json
  *   node tools/fetch-covers.mjs --list shchegol  — показать издания на выбор
  *   node tools/fetch-covers.mjs --pick shchegol=2 — взять третий вариант
  *
@@ -26,6 +28,7 @@ const IMAGE = id => `https://covers.openlibrary.org/b/id/${id}-L.jpg?default=fal
 
 const args = process.argv.slice(2);
 const force = args.includes('--force');
+const codesOnly = args.includes('--codes');
 const listOnly = args.includes('--list') ? args[args.indexOf('--list') + 1] : null;
 const picks = new Map();
 for (let i = 0; i < args.length; i++) {
@@ -58,6 +61,16 @@ async function download(coverId, dest) {
   return buf.length;
 }
 
+/** Есть ли по этому номеру настоящая картинка (а не заглушка). */
+async function coverExists(coverId) {
+  const res = await fetch(IMAGE(coverId));
+  if (!res.ok) return false;
+  const len = Number(res.headers.get('content-length') || 0);
+  if (len && len < 3000) return false;
+  const buf = Buffer.from(await res.arrayBuffer());
+  return buf.length >= 3000 && buf[0] === 0xff && buf[1] === 0xd8;
+}
+
 async function exists(p) {
   try { await stat(p); return true; } catch { return false; }
 }
@@ -83,18 +96,37 @@ let saved = 0, skipped = 0, missed = 0;
 
 for (const book of books) {
   const dest = join(COVERS, `${book.id}.jpg`);
-  if (!force && await exists(dest)) { skipped++; continue; }
+
+  if (codesOnly) {
+    if (!force && book.olCover) { skipped++; continue; }
+  } else if (!force && await exists(dest)) {
+    skipped++; continue;
+  }
 
   process.stdout.write(`· ${book.title} … `);
   try {
     const list = await candidates(book);
     const start = picks.get(book.id) ?? 0;
     let ok = false;
+
     for (let i = start; i < Math.min(list.length, start + 4); i++) {
-      const size = await download(list[i].cover_i, dest);
-      if (size) { console.log(`сохранено (${Math.round(size / 1024)} КБ)`); saved++; ok = true; break; }
+      const coverId = list[i].cover_i;
+
+      if (codesOnly) {
+        if (await coverExists(coverId)) {
+          book.olCover = `id:${coverId}`;
+          console.log(`код id:${coverId}`);
+          saved++; ok = true; break;
+        }
+      } else {
+        const size = await download(coverId, dest);
+        if (size) {
+          console.log(`сохранено (${Math.round(size / 1024)} КБ)`);
+          saved++; ok = true; break;
+        }
+      }
     }
-    if (!ok) { console.log('обложка не нашлась — останется типографская'); missed++; }
+    if (!ok) { console.log('обложка не нашлась — останется своя'); missed++; }
   } catch (e) {
     console.log(`ошибка: ${e.message}`);
     missed++;
@@ -102,5 +134,15 @@ for (const book of books) {
   await sleep(350);   // не частим с запросами к Open Library
 }
 
+if (codesOnly && saved) {
+  await writeFile(join(ROOT, 'data', 'books.json'),
+    JSON.stringify(books, null, 2) + '\n');
+}
+
 console.log(`\nГотово: сохранено ${saved}, пропущено ${skipped}, без обложки ${missed}.`);
-if (saved) console.log('Не забудьте закоммитить assets/covers/ — тогда сайт не зависит от чужого CDN.');
+if (saved && codesOnly) {
+  console.log('Коды вписаны в data/books.json. Переключатель «настоящие» на полке');
+  console.log('теперь будет тянуть обложки прямо с Open Library.');
+} else if (saved) {
+  console.log('Не забудьте закоммитить assets/covers/ — тогда сайт не зависит от чужого CDN.');
+}

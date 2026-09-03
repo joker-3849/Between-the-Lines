@@ -1,7 +1,8 @@
 /* Полка: шесть книг лицом, остальные — стопкой. Плюс поиск, жанры и сортировка. */
 
 import { state, avg, spread, genres, fmtDate, nPlural, nextMeeting, num } from './data.js';
-import { coverHTML, mountCovers, artOf, esc } from './ui.js';
+import { coverHTML, mountCovers, artOf, loadedCovers, resetLoadedCovers, esc } from './ui.js';
+import * as settings from './settings.js';
 import { icon, hydrateIcons } from './icons.js';
 
 const FACE_OUT = 6;          // сколько книг стоят лицом, прежде чем начнётся стопка
@@ -64,6 +65,32 @@ function renderToolbar() {
   box.innerHTML = list.map(g =>
     `<button class="chip" data-genre="${esc(g)}" aria-pressed="${g === ui.genre}">${esc(g)}</button>`
   ).join('');
+
+  const mode = settings.get('covers');
+  document.querySelectorAll('#coversToggle .seg').forEach(b =>
+    b.setAttribute('aria-pressed', String(b.dataset.covers === mode)));
+}
+
+/* Подсказка появляется только если настоящих обложек действительно не видно:
+   считаем те, что успели загрузиться, а не те, что прописаны в данных. */
+let hintToken = 0;
+
+function checkCoversHint() {
+  const hint = document.getElementById('coversHint');
+  const token = ++hintToken;
+
+  if (settings.get('covers') !== 'real') { hint.hidden = true; return; }
+
+  setTimeout(() => {
+    if (token !== hintToken) return;
+    const none = loadedCovers() === 0;
+    hint.hidden = !none;
+    if (none) {
+      hint.textContent = 'Фотографий настоящих обложек пока нет. Впишите код издания '
+        + 'в поле olCover в data/books.json или запустите tools/fetch-covers.mjs — '
+        + 'до тех пор показываем свои.';
+    }
+  }, 1600);
 }
 
 /* ── полка ────────────────────────────────────────────────────────────── */
@@ -131,7 +158,9 @@ export function renderShelf() {
       : pileHTML(rest));
 
   hydrateIcons(shelf);
+  resetLoadedCovers();
   mountCovers(shelf);
+  checkCoversHint();
 
   shelf.querySelectorAll('[data-id]').forEach(el => {
     el.addEventListener('click', () => {
@@ -178,6 +207,14 @@ export function initShelf(openBook) {
   document.getElementById('sort').addEventListener('change', e => {
     ui.sort = e.target.value;
     ui.pileOpen = false;
+    renderShelf();
+  });
+
+  document.getElementById('coversToggle').addEventListener('click', e => {
+    const b = e.target.closest('[data-covers]');
+    if (!b) return;
+    settings.set('covers', b.dataset.covers);
+    renderToolbar();
     renderShelf();
   });
 }

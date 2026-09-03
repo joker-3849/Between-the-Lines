@@ -17,6 +17,7 @@
     "proposedBy": "katya",
     "coverQuery": "Мастер и Маргарита Булгаков",
     "cover": "assets/covers/master-i-margarita.jpg",
+    "olCover": null,
     "reviews": {
       "katya": {
         "scores": {
@@ -91,6 +92,7 @@
     "proposedBy": "tanya",
     "coverQuery": "Норвежский лес Мураками",
     "cover": "assets/covers/norvezhskiy-les.jpg",
+    "olCover": null,
     "reviews": {
       "katya": {
         "scores": {
@@ -162,6 +164,7 @@
     "proposedBy": "vova",
     "coverQuery": "Убийство Роджера Экройда Кристи",
     "cover": "assets/covers/roger-ackroyd.jpg",
+    "olCover": null,
     "reviews": {
       "katya": {
         "scores": {
@@ -230,6 +233,7 @@
     "proposedBy": "vova",
     "coverQuery": "Пикник на обочине Стругацкие",
     "cover": "assets/covers/piknik-na-obochine.jpg",
+    "olCover": null,
     "reviews": {
       "katya": {
         "scores": {
@@ -301,6 +305,7 @@
     "proposedBy": "katya",
     "coverQuery": "Щегол Донна Тартт",
     "cover": "assets/covers/shchegol.jpg",
+    "olCover": null,
     "reviews": {
       "katya": {
         "scores": {
@@ -372,6 +377,7 @@
     "proposedBy": "liza",
     "coverQuery": "Слепота Сарамаго",
     "cover": "assets/covers/slepota.jpg",
+    "olCover": null,
     "reviews": {
       "katya": {
         "scores": {
@@ -440,6 +446,7 @@
     "proposedBy": "vova",
     "coverQuery": "Краткая история времени Хокинг",
     "cover": "assets/covers/kratkaya-istoriya-vremeni.jpg",
+    "olCover": null,
     "reviews": {
       "katya": {
         "scores": {
@@ -508,6 +515,7 @@
     "proposedBy": "tanya",
     "coverQuery": "Гордость и предубеждение Остин",
     "cover": "assets/covers/gordost-i-predubezhdenie.jpg",
+    "olCover": null,
     "reviews": {
       "katya": {
         "scores": {
@@ -579,6 +587,7 @@
     "proposedBy": "katya",
     "coverQuery": "Сто лет одиночества Маркес",
     "cover": "assets/covers/sto-let-odinochestva.jpg",
+    "olCover": null,
     "reviews": {
       "katya": {
         "scores": {
@@ -647,6 +656,7 @@
     "proposedBy": "liza",
     "coverQuery": "Все чего я не сказала Селеста Инг",
     "cover": "assets/covers/vse-chego-ya-ne-skazala.jpg",
+    "olCover": null,
     "reviews": {
       "katya": {
         "scores": {
@@ -715,6 +725,7 @@
     "proposedBy": "vova",
     "coverQuery": "Автостопом по галактике Адамс",
     "cover": "assets/covers/avtostopom-po-galaktike.jpg",
+    "olCover": null,
     "reviews": {
       "katya": {
         "scores": {
@@ -783,6 +794,7 @@
     "proposedBy": "liza",
     "coverQuery": "Мы Замятин",
     "cover": "assets/covers/my.jpg",
+    "olCover": null,
     "reviews": {
       "katya": {
         "scores": {

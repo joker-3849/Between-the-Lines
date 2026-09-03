@@ -16,7 +16,8 @@ const PATHS = {
   'stack':       '<path d="M12 4l-8 4 8 4 8-4z"/><path d="M4 12l8 4 8-4"/><path d="M4 16l8 4 8-4"/>',
   'users':       '<circle cx="9" cy="7" r="4"/><path d="M3 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/><path d="M21 21v-2a4 4 0 0 0-3-3.85"/>',
   'scale':       '<path d="M7 20h10"/><path d="M12 4v16"/><path d="M4 9l4-5 4 5a4 4 0 0 1-8 0z"/><path d="M12 9l4-5 4 5a4 4 0 0 1-8 0z"/>',
-  'x':           '<path d="M18 6L6 18"/><path d="M6 6l12 12"/>'
+  'x':           '<path d="M18 6L6 18"/><path d="M6 6l12 12"/>',
+  'photo':       '<path d="M15 8h.01"/><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M3 16l5-5c.928-.893 2.072-.893 3 0l5 5"/><path d="M14 15l1-1c.928-.893 2.072-.893 3 0l3 3"/>'
 };
 
 export function icon(name, cls = '') {

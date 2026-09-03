@@ -2,15 +2,35 @@
 
 import { state, scoresFor, avg, num } from './data.js';
 import { motifSVG, DEFAULT_ART } from './covers.js';
+import * as settings from './settings.js';
 
 export const esc = s => String(s ?? '').replace(/[&<>"']/g,
   c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
 /* ── обложка ──────────────────────────────────────────────────────────── */
 
+/**
+ * Адрес обложки на Open Library по короткому коду книги.
+ * Формат поля olCover — «тип:значение», например «isbn:9785170876543»,
+ * «olid:OL7353617M» или «id:8231856» (внутренний номер обложки).
+ * default=false заставляет сервис отдать 404 вместо пустой заглушки,
+ * поэтому неудачный код честно уходит в запасной вариант.
+ */
+export function olCoverURL(code) {
+  if (typeof code !== 'string') return null;
+  const m = code.trim().match(/^(id|isbn|olid|lccn|oclc):(.+)$/i);
+  if (!m) return null;
+  return `https://covers.openlibrary.org/b/${m[1].toLowerCase()}/`
+    + `${encodeURIComponent(m[2].trim())}-L.jpg?default=false`;
+}
+
+/** В режиме «свои обложки» картинки не запрашиваются вовсе. */
 function coverSources(book) {
+  if (settings.get('covers') !== 'real') return [];
   const list = [];
   if (book.cover) list.push(book.cover);
+  const ol = olCoverURL(book.olCover);
+  if (ol) list.push(ol);
   if (Array.isArray(book.coverRemote)) list.push(...book.coverRemote);
   return list;
 }
@@ -48,6 +68,12 @@ export function artOf(book) {
   return { ...DEFAULT_ART, ...(book.art || {}) };
 }
 
+let loaded = 0;
+
+/** Сколько настоящих обложек успело загрузиться с момента последнего сброса. */
+export function loadedCovers() { return loaded; }
+export function resetLoadedCovers() { loaded = 0; }
+
 /** Подключает загрузку картинок с перебором источников по очереди. */
 export function mountCovers(root = document) {
   root.querySelectorAll('.cover[data-sources]').forEach(cover => {
@@ -64,7 +90,10 @@ export function mountCovers(root = document) {
       if (i >= sources.length) return;     // остаёмся на типографской обложке
       img.src = sources[i++];
     };
-    img.addEventListener('load', () => cover.classList.add('has-img'), { once: true });
+    img.addEventListener('load', () => {
+      cover.classList.add('has-img');
+      loaded++;
+    }, { once: true });
     img.addEventListener('error', tryNext);
     tryNext();
   });
