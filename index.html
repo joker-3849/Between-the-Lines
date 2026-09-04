@@ -70,9 +70,12 @@
         </select>
       </div>
       <div class="tb-covers" id="coversToggle" role="group" aria-label="Какие обложки показывать">
-        <span class="ic" data-icon="photo"></span>
-        <button class="seg" data-covers="art">свои</button>
-        <button class="seg" data-covers="real"><span class="seg-long">настоящие</span><span class="seg-short">фото</span></button>
+        <button class="seg" data-covers="art" title="Свои обложки" aria-label="Показывать свои обложки">
+          <span class="ic" data-icon="brush"></span>
+        </button>
+        <button class="seg" data-covers="real" title="Настоящие обложки" aria-label="Показывать настоящие обложки">
+          <span class="ic" data-icon="photo"></span>
+        </button>
       </div>
     </div>
     <p class="covers-hint" id="coversHint" hidden></p>

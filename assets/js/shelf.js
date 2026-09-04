@@ -78,10 +78,21 @@ function renderToolbar() {
   box.innerHTML = list.map(g =>
     `<button class="chip" data-genre="${esc(g)}" aria-pressed="${g === ui.genre}">${esc(g)}</button>`
   ).join('');
+  requestAnimationFrame(() => syncGenreFade(box));
 
   const mode = settings.get('covers');
   document.querySelectorAll('#coversToggle .seg').forEach(b =>
     b.setAttribute('aria-pressed', String(b.dataset.covers === mode)));
+}
+
+/* Полоса жанров прокручивается вбок, и понять это можно только по
+   растушёванному краю — поэтому он появляется ровно с той стороны, где
+   ещё остались невидимые чипы, и пропадает, когда прокручивать некуда. */
+function syncGenreFade(box = document.getElementById('genres')) {
+  if (!box) return;
+  const max = box.scrollWidth - box.clientWidth;
+  box.classList.toggle('can-left', box.scrollLeft > 2);
+  box.classList.toggle('can-right', box.scrollLeft < max - 2);
 }
 
 /* Подсказка появляется только если настоящих обложек действительно не видно:
@@ -191,12 +202,69 @@ function fitFrontRow(front, count) {
   front.style.setProperty('--overlap', `${(ratio * coverW).toFixed(1)}px`);
 }
 
+/* Главная страница живёт ровно в один экран, поэтому размер книги считается
+   не по формуле в CSS, а по факту: сколько высоты осталось полке после шапки,
+   героя, панели и подвала. Значение в CSS (clamp по vw и vh) — только чтобы
+   первый кадр не мигал; дальше его заменяет посчитанное. */
+const COVER_MIN = 96;
+const COVER_MAX = 240;
+const COVER_RATIO = 1.5;              // высота обложки к ширине
+// Наклонённая книга ближним краем выходит ниже своей коробки, и ровно на
+// столько же ниже оказывается подпись, которая всплывает при наведении.
+const TILT_OVERHANG = 14;
+const ROW_FACTOR = 1 + (FACE_OUT - 1) * (1 - OVERLAP_MAX);  // во сколько ширин книги ряд шире её самой
+
+/** Ширина книги, при которой полка целиком помещается в оставшуюся высоту. */
+function coverWidthForHeight() {
+  const wrap = document.querySelector('.shelf-wrap');
+  const shelf = document.getElementById('shelf');
+  const foot = document.querySelector('.site-foot');
+  if (!wrap || !shelf) return null;
+
+  const wrapCs = getComputedStyle(wrap);
+  const shelfCs = getComputedStyle(shelf);
+  // Верх полки в координатах документа: страница должна укладываться в экран
+  // целиком, поэтому считаем от начала документа, а не от текущей прокрутки.
+  const top = wrap.getBoundingClientRect().top - document.body.getBoundingClientRect().top;
+
+  const avail = window.innerHeight - top
+    - parseFloat(wrapCs.paddingBottom || 0)
+    - parseFloat(shelfCs.paddingTop || 0)
+    - (foot ? foot.offsetHeight : 0)
+    - TILT_OVERHANG;
+
+  return clampCover(avail / COVER_RATIO);
+}
+
+const clampCover = w => Math.max(COVER_MIN, Math.min(COVER_MAX, Math.round(w)));
+
+/** Ширина книги, при которой ряд из FACE_OUT книг ещё помещается по ширине. */
+function coverWidthForRow(front) {
+  const cs = getComputedStyle(front);
+  const inner = front.clientWidth - parseFloat(cs.paddingLeft || 0) - parseFloat(cs.paddingRight || 0);
+  // Плитка «добавить» тоже шириной в книгу, поэтому она сжимается вместе с
+  // рядом: место, которое она освободит, достаётся ряду.
+  return clampCover((inner + front.querySelector('.book3d')?.offsetWidth || inner) / (ROW_FACTOR + 1));
+}
+
 let lastFrontCount = 0;
 
-/** Пересчитать нахлёст под текущую ширину окна — например, после ресайза. */
+/** Пересчитать размер книги и нахлёст под текущее окно. */
 export function refitShelf() {
   const front = document.querySelector('.shelf-front');
-  if (front && lastFrontCount) fitFrontRow(front, lastFrontCount);
+  if (!front || !lastFrontCount) return;
+
+  const byHeight = coverWidthForHeight();
+  if (byHeight != null) {
+    document.documentElement.style.setProperty('--cover-w', `${byHeight}px`);
+    // Второй проход: после смены размера ряду могло не хватить ширины —
+    // тогда высоту недобираем, зато книги не наезжают на стопку.
+    const byRow = coverWidthForRow(front);
+    if (byRow < byHeight) {
+      document.documentElement.style.setProperty('--cover-w', `${byRow}px`);
+    }
+  }
+  fitFrontRow(front, lastFrontCount);
 }
 
 export function renderShelf() {
@@ -240,10 +308,7 @@ export function renderShelf() {
   document.getElementById('addBookTile')?.addEventListener('click', openAddBookModal);
 
   lastFrontCount = front.length;
-  requestAnimationFrame(() => {
-    const frontEl = shelf.querySelector('.shelf-front');
-    if (frontEl) fitFrontRow(frontEl, lastFrontCount);
-  });
+  requestAnimationFrame(refitShelf);
 }
 
 /** Перерисовать панель и полку после добавления книги — вызывается извне. */
@@ -295,9 +360,12 @@ export function initShelf(openBook) {
     renderShelf();
   });
 
+  document.getElementById('genres')
+    .addEventListener('scroll', () => syncGenreFade(), { passive: true });
+
   let resizeT;
   window.addEventListener('resize', () => {
     clearTimeout(resizeT);
-    resizeT = setTimeout(refitShelf, 120);
+    resizeT = setTimeout(() => { refitShelf(); syncGenreFade(); }, 120);
   });
 }
