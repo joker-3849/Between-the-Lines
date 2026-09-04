@@ -67,23 +67,33 @@ export function openShareModal(book) {
 }
 
 /** Перерисовывает карточку в полном размере и отдаёт файл. */
-function download(book, card) {
+async function download(book, card) {
+  await ensureFonts();
   const cv = document.createElement('canvas');
-  ensureFonts().then(() => {
-    renderCard(cv, card, W);
-    cv.toBlob(blob => {
-      if (!blob) return;
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `${slugify(book.title)}-${card.id}.png`;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      // Отзываем ссылку не сразу: Safari успевает начать скачивание не мгновенно.
-      setTimeout(() => URL.revokeObjectURL(url), 4000);
-    }, 'image/png');
-  });
+  renderCard(cv, card, W);
+  const blob = await new Promise(res => cv.toBlob(res, 'image/png'));
+  if (!blob) return;
+
+  const filename = `${slugify(book.title)}-${card.id}.png`;
+
+  // В предпросмотре артефакта Claude страница не может скачивать файлы сама —
+  // там для этого есть отдельный механизм. На обычном сайте его нет, поэтому
+  // сначала пробуем его, а если не отвечает, работаем обычной ссылкой.
+  const save = await globalThis.claude?.use?.('downloads').catch(() => null);
+  if (save) {
+    try { await save.save({ filename, data: blob }); } catch { /* отказались */ }
+    return;
+  }
+
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  // Отзываем ссылку не сразу: Safari начинает скачивание не мгновенно.
+  setTimeout(() => URL.revokeObjectURL(url), 4000);
 }
 
 export { W as CARD_W, H as CARD_H };
