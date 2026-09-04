@@ -1,7 +1,7 @@
 /* Три остальных раздела: «Между строк», «Хроника» и «Итоги года». */
 
 import {
-  state, avg, spread, allLines, fmtDate, nPlural, plural,
+  state, avg, spread, allLines, fmtDate, nPlural, plural, numPlural,
   memberMean, memberScore, yearOf, years, num
 } from './data.js';
 import { coverHTML, mountCovers, avatarHTML, whoHTML, esc } from './ui.js';
@@ -144,16 +144,26 @@ function featureHTML({ label, book, text, showScores }) {
   </section>`;
 }
 
+/* Объём и год издания в записях встреч есть не у всех книг, поэтому
+   соответствующие рекорды показываются, только когда их есть на чём
+   посчитать: карточка «Самая толстая» без страниц врала бы. */
 function recordsHTML(list) {
-  const longest = best(list, b => b.pages || 0);
-  const oldest = worst(list, b => b.year || 9999);
+  const withPages = list.filter(b => b.pages > 0);
+  const withYear = list.filter(b => b.year);
   const unison = worst(list, b => spread(b));
 
-  const cards = [
-    { label: 'Самая толстая', book: longest, value: nPlural(longest.pages, 'страница', 'страницы', 'страниц') },
-    { label: 'Самая старая', book: oldest, value: `${oldest.year} год` },
-    { label: 'Полное единодушие', book: unison, value: `разброс ${nPlural(spread(unison), 'балл', 'балла', 'баллов')}` }
-  ];
+  const cards = [];
+  if (withPages.length) {
+    const longest = best(withPages, b => b.pages);
+    cards.push({ label: 'Самая толстая', book: longest,
+      value: nPlural(longest.pages, 'страница', 'страницы', 'страниц') });
+  }
+  if (withYear.length) {
+    const oldest = worst(withYear, b => b.year);
+    cards.push({ label: 'Самая старая', book: oldest, value: `${oldest.year} год` });
+  }
+  cards.push({ label: 'Полное единодушие', book: unison,
+    value: `разброс ${numPlural(spread(unison), 'балл', 'балла', 'баллов')}` });
 
   return `<section class="yr-act">
     <div class="yr-label">Ещё несколько рекордов</div>
@@ -262,7 +272,8 @@ export function renderYear() {
       <div class="yr-number">${activeYear}</div>
       <p>${running
         ? 'Год ещё идёт — итоги промежуточные и будут дополняться после каждой встречи.'
-        : `Год закрыт: ${nPlural(list.length, 'встреча', 'встречи', 'встреч')} и ${nPlural(pages, 'страница', 'страницы', 'страниц')}.`}</p>
+        : `Год закрыт: ${nPlural(list.length, 'встреча', 'встречи', 'встреч')}`
+          + `${pages ? ` и ${nPlural(pages, 'страница', 'страницы', 'страниц')}` : ''}.`}</p>
       ${switcher}
       <div class="yr-scrollhint">${icon('chevron-down')}<span>Листайте</span></div>
     </header>
@@ -271,9 +282,9 @@ export function renderYear() {
       <div class="yr-label">Коротко</div>
       <div class="yr-stats">
         <div class="yr-stat"><b>${list.length}</b><span>${plural(list.length, 'КНИГА', 'КНИГИ', 'КНИГ')}</span></div>
-        <div class="yr-stat"><b>${pages.toLocaleString('ru-RU')}</b><span>СТРАНИЦ</span></div>
+        ${pages ? `<div class="yr-stat"><b>${pages.toLocaleString('ru-RU')}</b><span>СТРАНИЦ</span></div>` : ''}
         <div class="yr-stat"><b>${num(mean)}</b><span>СРЕДНЯЯ ОЦЕНКА</span></div>
-        <div class="yr-stat"><b>${num(Math.max(...list.map(b => spread(b))), 0)}</b><span>МАКСИМАЛЬНЫЙ РАЗБРОС</span></div>
+        <div class="yr-stat"><b>${num(Math.max(...list.map(b => spread(b))))}</b><span>МАКСИМАЛЬНЫЙ РАЗБРОС</span></div>
       </div>
     </section>
 
@@ -290,7 +301,7 @@ export function renderYear() {
     ${featureHTML({
       label: 'Самая спорная',
       book: mostSplit,
-      text: `Разброс в ${nPlural(spread(mostSplit), 'балл', 'балла', 'баллов')} — рекорд года. ` +
+      text: `Разброс в ${numPlural(spread(mostSplit), 'балл', 'балла', 'баллов')} — рекорд года. ` +
             `Ниже видно, кто где оказался.`,
       showScores: true
     })}

@@ -14,13 +14,23 @@ const ui = { genre: 'Всё', sort: 'date-desc', query: '', pileOpen: false };
 
 let onOpen = () => {};
 
+/* Книги без года или объёма (в записях встреч этих полей часто нет) уходят
+   в конец списка, а не всплывают наверх как «нулевые». */
+const last = (v, cmp) => (a, b) => {
+  const x = v(a), y = v(b);
+  if (x == null && y == null) return 0;
+  if (x == null) return 1;
+  if (y == null) return -1;
+  return cmp(x, y);
+};
+
 const SORTS = {
   'date-desc':   (a, b) => b.discussed.localeCompare(a.discussed),
   'date-asc':    (a, b) => a.discussed.localeCompare(b.discussed),
-  'score-desc':  (a, b) => (avg(b) ?? 0) - (avg(a) ?? 0),
+  'score-desc':  last(avg, (x, y) => y - x),
   'spread-desc': (a, b) => spread(b) - spread(a) || (avg(b) ?? 0) - (avg(a) ?? 0),
-  'year-asc':    (a, b) => (a.year ?? 0) - (b.year ?? 0),
-  'pages-desc':  (a, b) => (b.pages ?? 0) - (a.pages ?? 0),
+  'year-asc':    last(b => b.year, (x, y) => x - y),
+  'pages-desc':  last(b => b.pages, (x, y) => y - x),
   'title-asc':   (a, b) => a.title.localeCompare(b.title, 'ru')
 };
 

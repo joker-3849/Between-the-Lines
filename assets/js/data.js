@@ -196,6 +196,13 @@ export function nextMeeting(club = state.club) {
   return { date: d, iso: d.toISOString().slice(0, 10), days };
 }
 
+/** Числительное при дробном значении: «0,4 балла», «5 баллов», «1 балл».
+ *  У дробей в русском всегда родительный единственного — «балла», а не «баллов». */
+export function numPlural(v, one, few, many) {
+  const shown = Number(v.toFixed(1));
+  return `${num(v)} ${Number.isInteger(shown) ? plural(shown, one, few, many) : few}`;
+}
+
 /** Число с одним знаком после запятой, без хвостового нуля: 8.0 → «8», 7.75 → «7,8» */
 export function num(v, digits = 1) {
   if (v == null) return '—';

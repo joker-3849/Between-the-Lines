@@ -1,21 +1,21 @@
 {
   "name": "Between the Lines",
   "tagline": "Полка книжного клуба: всё, что мы прочли, и что каждая из нас об этом думает.",
-  "since": 2023,
-  "cadenceLabel": "встречаемся раз в две недели, по четвергам",
+  "since": 2024,
+  "cadenceLabel": "встречаемся раз в несколько недель",
   "cadenceDays": 14,
-  "nextMeeting": "2026-09-11",
+  "nextMeeting": "2026-05-16",
   "currentlyReading": {
-    "title": "Дневник плохого года",
-    "author": "Дж. М. Кутзее"
+    "title": "",
+    "author": ""
   },
   "scale": 10,
   "members": [
     {
-      "id": "katya",
-      "name": "Катя",
-      "initial": "К",
-      "color": "#d9a94c",
+      "id": "tanya",
+      "name": "Таня",
+      "initial": "Т",
+      "color": "#8db39a",
       "g": "f"
     },
     {
@@ -26,18 +26,11 @@
       "g": "f"
     },
     {
-      "id": "tanya",
-      "name": "Таня",
-      "initial": "Т",
-      "color": "#8db39a",
+      "id": "katya",
+      "name": "Катя",
+      "initial": "К",
+      "color": "#d9a94c",
       "g": "f"
-    },
-    {
-      "id": "vova",
-      "name": "Вова",
-      "initial": "В",
-      "color": "#8f9fd4",
-      "g": "m"
     }
   ],
   "criteria": [
@@ -63,16 +56,22 @@
     }
   ],
   "yearHighlights": {
+    "2024": {
+      "lineOfTheYear": {
+        "bookId": "babushka-velela-klanyatsya",
+        "memberId": "katya"
+      }
+    },
     "2025": {
       "lineOfTheYear": {
-        "bookId": "slepota",
-        "memberId": "liza"
+        "bookId": "parfyumer",
+        "memberId": "tanya"
       }
     },
     "2026": {
       "lineOfTheYear": {
-        "bookId": "my",
-        "memberId": "tanya"
+        "bookId": "pochtalonsha",
+        "memberId": "katya"
       }
     }
   }

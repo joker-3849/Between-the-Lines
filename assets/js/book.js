@@ -1,7 +1,7 @@
 /* Страница книги: мнения сгруппированы по критериям, а не по участникам.
    Открывается плавным перелётом обложки с полки (FLIP). */
 
-import { state, avg, spread, verdict, scoresFor, rereadTally, fmtDate, nPlural, plural, num } from './data.js';
+import { state, avg, spread, verdict, scoresFor, rereadTally, fmtDate, nPlural, numPlural, num } from './data.js';
 import { coverHTML, mountCovers, critHTML, whoHTML, avatarHTML, esc, stagger } from './ui.js';
 import { hydrateIcons } from './icons.js';
 import { coverOnShelf } from './shelf.js';
@@ -67,8 +67,8 @@ function verdictHTML(book) {
       ? `Оценил${scores[0].member.g === 'm' ? '' : 'а'} пока только ${scores[0].member.name}.`
       : sp < 0.05
         ? 'Все сошлись на одной оценке — такое случается редко.'
-        : `Средние баллы участников разошлись на ${num(sp)} `
-          + `${plural(Math.round(sp), 'балл', 'балла', 'баллов')} из ${state.club.scale}.`;
+        : `Средние баллы участников разошлись на `
+          + `${numPlural(sp, 'балл', 'балла', 'баллов')} из ${state.club.scale}.`;
 
   return `<div class="bp-verdict">
     <span class="bp-avg">${num(mean)}<small>/${state.club.scale}</small></span>
