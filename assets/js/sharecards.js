@@ -43,7 +43,7 @@ let fontsReady = null;
 export function ensureFonts() {
   if (fontsReady) return fontsReady;
   const need = [
-    `400 120px ${SERIF}`, `italic 400 48px ${SERIF}`,
+    `400 120px ${SERIF}`, `400 50px ${SERIF}`, `italic 400 50px ${SERIF}`,
     `400 40px ${SANS}`, `500 40px ${SANS}`, `600 40px ${SANS}`
   ];
   fontsReady = Promise.all(need.map(f => document.fonts.load(f).catch(() => {})))
@@ -95,14 +95,41 @@ function roundRect(ctx, x, y, w, h, r) {
   ctx.closePath();
 }
 
-/** Подпись клуба внизу — она есть на каждой карточке. */
-function footer(ctx, p, color) {
-  ctx.textAlign = 'center';
-  ctx.font = `500 30px ${SANS}`;
+/**
+ * Логотип клуба — тот же, что в шапке сайта: антиква, «the» курсивом и
+ * приглушённым цветом. Три куска приходится мерить и складывать вручную,
+ * потому что canvas рисует одним шрифтом за раз.
+ */
+function wordmark(ctx, x, y, size, color) {
+  const regular = `400 ${size}px ${SERIF}`;
+  const italic = `italic 400 ${size}px ${SERIF}`;
+
+  ctx.textAlign = 'left';
+  ctx.font = regular; const w1 = ctx.measureText('Between').width;
+  ctx.font = italic;  const w2 = ctx.measureText(' the ').width;
+  ctx.font = regular; const w3 = ctx.measureText('Lines').width;
+
+  let cx = x - (w1 + w2 + w3) / 2;
   ctx.fillStyle = color;
-  ctx.letterSpacing = '6px';
-  ctx.fillText('BETWEEN THE LINES', W / 2, H - 108);
-  ctx.letterSpacing = '0px';
+
+  ctx.font = regular;
+  ctx.fillText('Between', cx, y);
+  cx += w1;
+
+  ctx.font = italic;
+  ctx.globalAlpha = .55;
+  ctx.fillText(' the ', cx, y);
+  ctx.globalAlpha = 1;
+  cx += w2;
+
+  ctx.font = regular;
+  ctx.fillText('Lines', cx, y);
+  ctx.textAlign = 'center';
+}
+
+/** Подпись клуба внизу — она есть на каждой карточке. */
+function footer(ctx, color) {
+  wordmark(ctx, W / 2, H - 104, 50, color);
 }
 
 function bigScore(ctx, mean, { x, y, color, sub }) {
@@ -233,7 +260,7 @@ function drawCover(ctx, book) {
     ctx.fillText(`обсуждали ${fmtDate(book.discussed)}`, W / 2, H - 190);
     ctx.globalAlpha = 1;
   }
-  footer(ctx, palette(), art.fg);
+  footer(ctx, art.fg);
 }
 
 /* ── карточка 2: цитата ───────────────────────────────────────────────── */
@@ -292,7 +319,7 @@ function drawQuote(ctx, book, { line, member }) {
     ctx.fillStyle = p.gold;
     ctx.fillText(`${num(mean)} / ${scale()}`, W / 2, tb + 120);
   }
-  footer(ctx, p, p.faint);
+  footer(ctx, p.dim);
 }
 
 /* ── карточка 3: оценки участниц ──────────────────────────────────────── */
@@ -379,7 +406,7 @@ function drawScores(ctx, book) {
     ctx.fillStyle = p.gold;
     ctx.fillText(`${num(mean)} / ${scale()}`, W / 2, avgBlockTop + 220);
   }
-  footer(ctx, p, p.faint);
+  footer(ctx, p.dim);
 }
 
 /* ── карточка 4: профиль по критериям ─────────────────────────────────── */
@@ -476,7 +503,7 @@ function drawRadar(ctx, book) {
   ctx.globalAlpha = .72;
   ctx.fillText(book.author, W / 2, tb + 68);
   ctx.globalAlpha = 1;
-  footer(ctx, p, art.fg);
+  footer(ctx, art.fg);
 }
 
 /* ── карточка 5: впечатление участницы ────────────────────────────────── */
@@ -548,7 +575,7 @@ function drawImpression(ctx, book, { member, text }) {
   ctx.fillStyle = p.dim;
   ctx.textAlign = 'center';
   ctx.fillText(book.author, W / 2, tb + 58);
-  footer(ctx, p, p.faint);
+  footer(ctx, p.dim);
 }
 
 /* ── подбор цвета ─────────────────────────────────────────────────────── */
