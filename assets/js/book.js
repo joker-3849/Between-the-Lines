@@ -3,8 +3,9 @@
 
 import { state, spread, verdict, scoresFor, fmtDate, nPlural, numPlural, num } from './data.js';
 import { coverHTML, mountCovers, whoHTML, esc, stagger } from './ui.js';
-import { gaugeHTML, radarHTML, rereadRingHTML, memberCardsHTML } from './charts.js';
+import { gaugeHTML, radarHTML, rereadRingHTML, rankHTML, memberCardsHTML } from './charts.js';
 import { hydrateIcons } from './icons.js';
+import { mountTilt, tiltWrap } from './tilt.js';
 import { coverOnShelf } from './shelf.js';
 import { showBookJSON } from './addbook.js';
 import { openBookEditor } from './bookedit.js';
@@ -108,7 +109,7 @@ function render(book) {
   view.innerHTML = `<article class="book-page">
     ${draftBannerHTML(book)}
     <div class="bp-left">
-      ${coverHTML(book, 'bp-cover')}
+      ${tiltWrap(coverHTML(book, 'bp-cover'), 'tilt-bp')}
       ${factsHTML(book)}
     </div>
     <div class="bp-right">
@@ -128,6 +129,7 @@ function render(book) {
           ${gaugeHTML(book)}
           ${radarHTML(book)}
           ${rereadRingHTML(book)}
+          ${rankHTML(book)}
         </div>
         ${memberCardsHTML(book)}
       ` : '<p class="bp-verdict-note">Пока никто не оценил.</p>'}
@@ -138,6 +140,7 @@ function render(book) {
 
   hydrateIcons(view);
   mountCovers(view);
+  mountTilt(view);
   view.querySelector('#showDraftJson')?.addEventListener('click', () => showBookJSON(book));
   view.querySelector('#editBook')?.addEventListener('click', () => {
     openBookEditor(book, { onDone: () => rerender(book) });

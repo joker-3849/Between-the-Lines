@@ -182,9 +182,16 @@ const OVERLAP_MIN = 0.18;
 // в пятую часть ширины — по ней ещё можно попасть пальцем. Всё, что тесноты
 // требует сверх этого, решается тем, что стопка уходит на свою строку.
 const OVERLAP_MAX = 0.80;
+// «Разложить» выкладывает на полку всю библиотеку — там ряд вдвое длиннее,
+// и книгам разрешено стоять теснее: смотреть их всё равно приходится
+// по одной, наводя курсор.
+const OVERLAP_MAX_OPEN = 0.92;
+
+const overlapMax = count => (count > FACE_OUT ? OVERLAP_MAX_OPEN : OVERLAP_MAX);
 
 /** Подгоняет нахлёст между обложками под фактическую ширину ряда. */
 function fitFrontRow(front, count) {
+  const max = overlapMax(count);
   if (!count) return;
   // Ширину берём с самой книги, а не из --cover-w: значение переменной
   // приходит из getComputedStyle нерассчитанным (clamp(96px,13.6vw,196px)
@@ -196,7 +203,7 @@ function fitFrontRow(front, count) {
   let ratio = OVERLAP_MIN;
   if (count > 1 && available > 0) {
     const step = (available - coverW) / (count - 1);
-    ratio = Math.min(OVERLAP_MAX, Math.max(OVERLAP_MIN, 1 - step / coverW));
+    ratio = Math.min(max, Math.max(OVERLAP_MIN, 1 - step / coverW));
   }
   front.style.setProperty('--overlap', `${(ratio * coverW).toFixed(1)}px`);
 }
@@ -211,7 +218,6 @@ const COVER_RATIO = 1.5;              // высота обложки к шири
 // Наклонённая книга ближним краем выходит ниже своей коробки, и ровно на
 // столько же ниже оказывается подпись, которая всплывает при наведении.
 const TILT_OVERHANG = 14;
-const ROW_FACTOR = 1 + (FACE_OUT - 1) * (1 - OVERLAP_MAX);  // во сколько ширин книги ряд шире её самой
 
 /** Ширина книги, при которой полка целиком помещается в оставшуюся высоту. */
 function coverWidthForHeight() {
@@ -237,13 +243,16 @@ function coverWidthForHeight() {
 
 const clampCover = w => Math.max(COVER_MIN, Math.min(COVER_MAX, Math.round(w)));
 
-/** Ширина книги, при которой ряд из FACE_OUT книг ещё помещается по ширине. */
-function coverWidthForRow(front) {
+/** Ширина книги, при которой ряд из count книг ещё помещается по ширине. */
+function coverWidthForRow(front, count) {
   const cs = getComputedStyle(front);
   const inner = front.clientWidth - parseFloat(cs.paddingLeft || 0) - parseFloat(cs.paddingRight || 0);
-  // Плитка «добавить» тоже шириной в книгу, поэтому она сжимается вместе с
-  // рядом: место, которое она освободит, достаётся ряду.
-  return clampCover((inner + front.querySelector('.book3d')?.offsetWidth || inner) / (ROW_FACTOR + 1));
+  // Ряд из count книг занимает rowFactor ширин обложки. Плитка «добавить»
+  // тоже шириной в книгу и сжимается вместе с рядом, поэтому её ширина
+  // возвращается в общий бюджет — отсюда +1 в знаменателе.
+  const rowFactor = 1 + (count - 1) * (1 - overlapMax(count));
+  const tile = front.querySelector('.book3d')?.offsetWidth || 0;
+  return clampCover((inner + tile) / (rowFactor + 1));
 }
 
 let lastFrontCount = 0;
@@ -258,7 +267,7 @@ export function refitShelf() {
     document.documentElement.style.setProperty('--cover-w', `${byHeight}px`);
     // Второй проход: после смены размера ряду могло не хватить ширины —
     // тогда высоту недобираем, зато книги не наезжают на стопку.
-    const byRow = coverWidthForRow(front);
+    const byRow = coverWidthForRow(front, lastFrontCount);
     if (byRow < byHeight) {
       document.documentElement.style.setProperty('--cover-w', `${byRow}px`);
     }

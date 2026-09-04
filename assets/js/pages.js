@@ -6,6 +6,7 @@ import {
 } from './data.js';
 import { coverHTML, mountCovers, avatarHTML, whoHTML, esc } from './ui.js';
 import { icon, hydrateIcons } from './icons.js';
+import { mountTilt, tiltWrap } from './tilt.js';
 
 let onOpenBook = () => {};
 export function initPages(openBook) { onOpenBook = openBook; }
@@ -132,7 +133,7 @@ function featureHTML({ label, book, text, showScores }) {
     <div class="yr-label">${esc(label)}</div>
     <div class="yr-feature">
       <button data-book-link="${esc(book.id)}" style="display:block;text-align:left">
-        ${coverHTML(book)}
+        ${tiltWrap(coverHTML(book), 'tilt-feature')}
       </button>
       <div>
         <h2 class="yr-btitle">${esc(book.title)}</h2>
@@ -317,6 +318,7 @@ export function renderYear() {
 
   hydrateIcons(view);
   mountCovers(view);
+  mountTilt(view);
   wireBookLinks(view);
 
   const sw = view.querySelector('.yr-switch');

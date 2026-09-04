@@ -34,6 +34,7 @@ export function gaugeHTML(book) {
 
   return `<div class="wg wg-gauge">
     <div class="wg-label">Средний балл</div>
+    <div class="wg-body">
     <svg viewBox="0 0 200 118" class="gauge" aria-hidden="true">
       <defs>
         <linearGradient id="gaugeGrad" x1="0" y1="0" x2="1" y2="0">
@@ -48,6 +49,7 @@ export function gaugeHTML(book) {
     </svg>
     <div class="gauge-value">
       <b>${mean == null ? '—' : num(mean)}</b><span>из ${max}</span>
+    </div>
     </div>
   </div>`;
 }
@@ -111,7 +113,8 @@ export function radarHTML(book) {
 
   return `<div class="wg wg-radar">
     <div class="wg-label">Профиль книги</div>
-    <svg viewBox="0 0 216 200" class="radar" aria-hidden="true">
+    <div class="wg-body">
+    <svg viewBox="-20 0 256 200" class="radar" aria-hidden="true">
       ${rings}${spokes}
       <polygon points="${polygon(clubVals, n)}" fill="var(--gold)" opacity=".13"/>
       <polygon points="${polygon(clubVals, n)}" fill="none" stroke="var(--gold)" stroke-width="2"
@@ -123,6 +126,7 @@ export function radarHTML(book) {
       <span class="lg lg-club">клуб</span>
       ${state.members.map(m =>
         `<span class="lg" style="--c:${esc(m.color)}">${esc(m.name)}</span>`).join('')}
+    </div>
     </div>
   </div>`;
 }
@@ -139,6 +143,7 @@ export function rereadRingHTML(book) {
 
   return `<div class="wg wg-reread">
     <div class="wg-label">Перечитаешь?</div>
+    <div class="wg-body">
     <div class="ring-wrap">
       <svg viewBox="0 0 112 112" class="ring" aria-hidden="true">
         <circle cx="56" cy="56" r="${r}" fill="none" stroke="var(--rr-no)" stroke-width="12"/>
@@ -153,6 +158,49 @@ export function rereadRingHTML(book) {
         <span>${yes.map(m => esc(m.name)).join(', ')}</span></div>` : ''}
       ${no.length ? `<div class="rr-row rr-no"><span class="rr-key">нет</span>
         <span>${no.map(m => esc(m.name)).join(', ')}</span></div>` : ''}
+    </div>
+    </div>
+  </div>`;
+}
+
+/* ── место на полке ───────────────────────────────────────────────────── */
+
+/**
+ * Где эта книга среди всех прочитанных: полоска из засечек, по одной на
+ * книгу, отсортированных по средней оценке, — своя выделена. Само число
+ * «седьмая из двенадцати» мало что говорит, а вот насколько она оторвалась
+ * от соседей по списку, видно сразу.
+ */
+export function rankHTML(book) {
+  const rated = state.books
+    .map(b => ({ b, mean: avg(b) }))
+    .filter(x => x.mean != null)
+    .sort((a, b) => b.mean - a.mean);
+
+  const i = rated.findIndex(x => x.b.id === book.id);
+  if (i < 0 || rated.length < 2) return '';
+
+  const top = rated[0].mean, bottom = rated[rated.length - 1].mean;
+  const span = top - bottom || 1;
+  const pos = m => (1 - (m - bottom) / span) * 100;   // сверху вниз: лучшие слева
+
+  const ticks = rated.map((x, k) =>
+    `<span class="rk-tick${k === i ? ' on' : ''}" style="left:${pos(x.mean).toFixed(2)}%"
+       title="${esc(x.b.title)}: ${num(x.mean)}"></span>`).join('');
+
+  const ordinal = ['первая', 'вторая', 'третья', 'четвёртая', 'пятая', 'шестая',
+                   'седьмая', 'восьмая', 'девятая', 'десятая'][i] || `${i + 1}-я`;
+
+  return `<div class="wg wg-rank">
+    <div class="wg-label">Место на полке</div>
+    <div class="wg-body">
+      <div class="rk-number"><b>${i + 1}</b><span>из ${rated.length}</span></div>
+      <div class="rk-strip">
+        <span class="rk-line"></span>
+        ${ticks}
+      </div>
+      <div class="rk-ends"><span>лучшая</span><span>худшая</span></div>
+      <p class="rk-note">${esc(ordinal)} по средней оценке клуба</p>
     </div>
   </div>`;
 }

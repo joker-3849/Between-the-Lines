@@ -349,23 +349,20 @@ img{max-width:100%;display:block}
   padding:0 0 0 var(--pad);
   overflow:visible;
 }
-/* «Разложить» может открыть больше книг, чем поместится даже при максимальном
-   нахлёсте — единственный случай, где допускаем горизонтальную прокрутку. */
-.shelf-front.expanded{overflow-x:auto;overflow-y:hidden;scrollbar-width:none}
-.shelf-front.expanded::-webkit-scrollbar{display:none}
 .shelf-plank{
   position:relative;z-index:1;
-  max-width:calc(1300px - 2 * var(--pad));
-  margin:0 auto;height:1px;
-  background:linear-gradient(90deg,transparent,var(--ghost) 12%,var(--ghost) 88%,transparent);
+  width:100%;height:1px;
+  background:linear-gradient(90deg,transparent,var(--ghost) 7%,var(--ghost) 93%,transparent);
 }
-/* Общая тень под полкой стала мягче и легче: основную работу теперь делает
-   контактная тень каждой книги (.slot::after), а не одна тёмная полоса,
-   у которой был видимый край. */
+/* Тень идёт во всю ширину страницы и гаснет только у самых краёв — раньше
+   она обрывалась по ширине полки, и обрыв был виден. Основную работу по
+   объёму всё равно делает контактная тень каждой книги (.slot::after). */
 .shelf-plank::after{
-  content:"";position:absolute;left:4%;right:4%;top:1px;height:34px;
-  background:linear-gradient(to bottom,rgba(58,32,20,.13),transparent 78%);
-  filter:blur(6px);
+  content:"";position:absolute;left:0;right:0;top:1px;height:40px;
+  background:linear-gradient(to bottom,rgba(58,32,20,.14),transparent 80%);
+  filter:blur(7px);
+  -webkit-mask-image:linear-gradient(90deg,transparent,#000 6%,#000 94%,transparent);
+  mask-image:linear-gradient(90deg,transparent,#000 6%,#000 94%,transparent);
 }
 .shelf-empty{
   text-align:center;color:var(--faint);
@@ -496,6 +493,18 @@ img{max-width:100%;display:block}
   width:100%;height:84%;
   pointer-events:none;
 }
+/* Мягкая подложка под названием: рисунок у некоторых обложек доходит до
+   низа (рамки у «Убийств и кексиков», лучи, дождь) и цеплялся за буквы.
+   Градиент из собственного фона обложки гасит его ровно под текстом и на
+   однотонных участках не виден вовсе. */
+.cover-fallback::after{
+  content:"";position:absolute;left:0;right:0;bottom:0;height:52%;
+  background:linear-gradient(to top,
+    var(--bg,#1c1a17) 14%,
+    color-mix(in srgb,var(--bg,#1c1a17) 74%,transparent) 52%,
+    transparent 100%);
+  pointer-events:none;
+}
 .cf-top,.cf-text{position:relative;z-index:1;padding:0 8%}
 .cf-top{padding-top:9%}
 .cf-text{padding-bottom:8%}
@@ -596,7 +605,6 @@ img{max-width:100%;display:block}
 .book-edit .bp-left{position:static}
 .bp-cover{
   aspect-ratio:2/3;width:100%;
-  box-shadow:-12px 28px 56px rgba(58,32,20,.22);
   font-size:20px;
 }
 .bp-facts{
@@ -800,7 +808,7 @@ img{max-width:100%;display:block}
 .yr-stat span{display:block;font-size:12px;color:var(--faint);margin-top:9px;letter-spacing:.08em}
 
 .yr-feature{display:grid;grid-template-columns:minmax(180px,236px) 1fr;gap:clamp(28px,5vw,64px);align-items:center}
-.yr-feature .cover{aspect-ratio:2/3;box-shadow:-14px 30px 56px rgba(58,32,20,.24);font-size:17px}
+.yr-feature .cover{aspect-ratio:2/3;font-size:17px}
 .yr-btitle{
   font-family:var(--serif);
   font-size:clamp(34px,5.4vw,66px);line-height:1.02;letter-spacing:-.025em;
@@ -1289,12 +1297,14 @@ input[type="number"]{-moz-appearance:textfield}
 
 .bp-widgets{
   display:grid;
-  grid-template-columns:repeat(auto-fit,minmax(224px,1fr));
+  grid-template-columns:repeat(auto-fit,minmax(250px,1fr));
+  align-items:stretch;
   gap:clamp(12px,1.6vw,20px);
 }
 .wg{
   display:flex;flex-direction:column;align-items:center;
   padding:20px 18px 22px;
+  height:100%;
   border:1px solid var(--rule);border-radius:20px;
   background:var(--void-2);
   box-shadow:0 8px 22px rgba(var(--shadow),.05);
@@ -1303,6 +1313,12 @@ input[type="number"]{-moz-appearance:textfield}
   align-self:flex-start;
   font-size:11px;letter-spacing:.15em;text-transform:uppercase;color:var(--faint);
   margin-bottom:10px;
+}
+/* Тело виджета забирает остаток карточки и центрирует содержимое — иначе
+   короткая шкала висела бы у верхнего края рядом с высоким радаром. */
+.wg-body{
+  flex:1 1 auto;width:100%;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
 }
 
 /* полукруглая шкала среднего балла */
@@ -1392,4 +1408,89 @@ input[type="number"]{-moz-appearance:textfield}
 
 @media (max-width:520px){
   .mb-row{grid-template-columns:62px 1fr 18px}
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   Объёмное наведение на обложку (страница книги и «Книга года»)
+   ══════════════════════════════════════════════════════════════════════════ */
+
+.tilt{
+  display:block;width:100%;
+  perspective:900px;
+  /* Точка схода следует за курсором вместе с наклоном — так поворот выглядит
+     физичнее, чем при жёстко закреплённой перспективе по центру. */
+  perspective-origin:var(--gx,50%) var(--gy,50%);
+}
+.tilt-inner{
+  position:relative;display:block;
+  transform-style:preserve-3d;
+  transform:rotateX(var(--rx,0deg)) rotateY(var(--ry,0deg)) scale(var(--ts,1));
+  /* Возврат в исходное — плавный; слежение за курсором — почти мгновенное,
+     иначе обложка тянется за мышью с заметным опозданием. */
+  transition:transform .55s var(--ease),box-shadow .55s var(--ease);
+  will-change:transform;
+}
+.tilt.tilting .tilt-inner{transition:transform .12s linear,box-shadow .3s var(--ease)}
+.tilt-inner > .cover{box-shadow:none}
+
+/* Блик ползёт за курсором: без него поворот плоской картинки почти не читается. */
+.tilt-gloss{
+  position:absolute;inset:0;border-radius:inherit;
+  pointer-events:none;
+  border-radius:10px;
+  background:radial-gradient(circle 60% at var(--gx,50%) var(--gy,0%),
+    rgba(255,255,255,.34),rgba(255,255,255,.08) 42%,transparent 68%);
+  opacity:0;transition:opacity .35s var(--ease);
+  mix-blend-mode:screen;
+}
+.tilt.tilting .tilt-gloss{opacity:1}
+
+/* Тень живёт на внутреннем слое, чтобы наклоняться вместе с обложкой. */
+.tilt-bp .tilt-inner{
+  border-radius:10px;
+  box-shadow:-12px 28px 56px rgba(58,32,20,.22);
+}
+.tilt-bp.tilting .tilt-inner{box-shadow:-18px 40px 74px rgba(58,32,20,.3)}
+.tilt-feature .tilt-inner{
+  border-radius:10px;
+  box-shadow:-14px 30px 56px rgba(58,32,20,.24);
+}
+.tilt-feature.tilting .tilt-inner{box-shadow:-20px 44px 76px rgba(58,32,20,.32)}
+
+@media (prefers-reduced-motion:reduce){
+  .tilt-inner{transform:none!important}
+  .tilt-gloss{display:none}
+}
+
+/* место на полке */
+.rk-number{display:flex;align-items:baseline;gap:8px;margin-bottom:20px}
+.rk-number b{
+  font-family:var(--serif);font-weight:400;
+  font-size:clamp(34px,4.4vw,46px);line-height:1;color:var(--gold);
+}
+.rk-number span{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--faint)}
+.rk-strip{position:relative;width:100%;height:26px}
+.rk-line{
+  position:absolute;left:0;right:0;top:50%;height:1px;
+  background:linear-gradient(90deg,var(--ghost),var(--rule));
+}
+.rk-tick{
+  position:absolute;top:50%;
+  width:2px;height:11px;border-radius:2px;
+  background:var(--ghost);
+  transform:translate(-50%,-50%);
+}
+.rk-tick.on{
+  width:4px;height:24px;border-radius:3px;
+  background:var(--gold);
+  box-shadow:0 3px 10px rgba(101,14,20,.35);
+}
+.rk-ends{
+  display:flex;justify-content:space-between;width:100%;
+  font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--faint);
+  margin-top:2px;
+}
+.rk-note{
+  margin-top:14px;text-align:center;
+  font-size:12px;line-height:1.5;color:var(--dim);
 }
