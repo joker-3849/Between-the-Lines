@@ -21,7 +21,11 @@ const PATHS = {
   'plus':        '<path d="M12 5v14"/><path d="M5 12h14"/>',
   'copy':        '<rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/>',
   'refresh':     '<path d="M19.933 13a8 8 0 1 1 -.933 -6.5"/><path d="M20 4v5h-5"/>',
-  'check':       '<path d="M5 12l5 5l10 -10"/>'
+  'check':       '<path d="M5 12l5 5l10 -10"/>',
+  'pencil':      '<path d="M4 20h4l10.5 -10.5a2.828 2.828 0 1 0 -4 -4l-10.5 10.5v4"/><path d="M13.5 6.5l4 4"/>',
+  'device-floppy':'<path d="M6 4h10l4 4v12a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2"/><circle cx="12" cy="14" r="2"/><path d="M14 4v4h-6v-4"/>',
+  'thumb-up':    '<path d="M7 11v9h-3a1 1 0 0 1 -1 -1v-7a1 1 0 0 1 1 -1z"/><path d="M7 11l3.5 -7a2 2 0 0 1 3.5 2l-1 5h5a2 2 0 0 1 2 2.3l-1.2 6a2 2 0 0 1 -2 1.7h-9.8"/>',
+  'thumb-down':  '<path d="M7 13v-9h-3a1 1 0 0 0 -1 1v7a1 1 0 0 0 1 1z"/><path d="M7 13l3.5 7a2 2 0 0 0 3.5 -2l-1 -5h5a2 2 0 0 0 2 -2.3l-1.2 -6a2 2 0 0 0 -2 -1.7h-9.8"/>'
 };
 
 export function icon(name, cls = '') {

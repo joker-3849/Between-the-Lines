@@ -3,8 +3,9 @@
  * её сразу видно на полке — и отдаёт готовый JSON для вставки в
  * data/books.json. Черновик живёт до перезагрузки страницы. */
 
-import { state, addDraftBook, freeBookId } from './data.js';
-import { avatarHTML, isbnCoverURL, esc } from './ui.js';
+import { state, addDraftBook, freeBookId, num } from './data.js';
+import { avatarHTML, isbnCoverURL, esc,
+         scorePickerHTML, rereadPickerHTML, wirePickers, readPicked, pickedMean } from './ui.js';
 import { randomArt, motifSVG } from './covers.js';
 import { icon, hydrateIcons } from './icons.js';
 
@@ -82,19 +83,13 @@ function artPreviewHTML() {
 }
 
 function memberFieldsetHTML(m) {
-  const scale = state.club.scale || 10;
   return `<details class="review-member">
     <summary>${avatarHTML(m)}<span>${esc(m.name)}</span>
       <span class="review-member-hint">развернуть, если мнение уже есть</span></summary>
     <div class="review-body">
-      <div class="score-grid">
-        ${state.criteria.map(c => `<label class="score-field">
-          <span>${esc(c.label)}</span>
-          <input type="number" min="1" max="${scale}" step="1"
-            class="nb-score" data-member="${m.id}" data-crit="${c.id}"
-            placeholder="1–${scale}">
-        </label>`).join('')}
-      </div>
+      <div class="be-mean" data-member="${esc(m.id)}"><b>—</b><span>средний балл</span></div>
+      ${state.criteria.map(c => scorePickerHTML(m, c, undefined)).join('')}
+      ${rereadPickerHTML(m, null)}
       <div class="field">
         <label>Впечатление</label>
         <textarea class="nb-text" data-member="${m.id}"></textarea>
@@ -172,9 +167,10 @@ function formHTML() {
       </div>
     </div>
 
-    <h3 class="section-h" style="margin-top:8px">Мнения участниц</h3>
-    <p class="field-hint" style="margin:-10px 0 14px">Разверните карточку каждой, у кого мнение
-      уже есть. Остальных можно оставить свёрнутыми и дозаполнить позже.</p>
+    <h3 class="section-h" style="margin-top:8px">Мнения участников</h3>
+    <p class="field-hint" style="margin:-10px 0 14px">Разверните карточку каждого, у кого мнение
+      уже есть — балл ставится кликом по цифре. Остальных можно оставить свёрнутыми
+      и дозаполнить позже через «Внести изменения» на странице книги.</p>
     <div class="review-members">
       ${state.members.map(memberFieldsetHTML).join('')}
     </div>
@@ -233,6 +229,13 @@ function wireForm() {
     }, 400);
   });
 
+  wirePickers(document.querySelector('.review-members'), memberId => {
+    const box = form.querySelector(`.be-mean[data-member="${CSS.escape(memberId)}"] b`);
+    if (!box) return;
+    const mean = pickedMean(form, memberId);
+    box.textContent = mean == null ? '—' : num(mean);
+  });
+
   document.getElementById('addBookCancel').addEventListener('click', closeModal);
 
   form.addEventListener('submit', e => {
@@ -250,18 +253,16 @@ function wireForm() {
 function buildReviews(form) {
   const reviews = {};
   state.members.forEach(m => {
-    const scores = {};
-    let any = false;
-    state.criteria.forEach(c => {
-      const el = form.querySelector(`.nb-score[data-member="${m.id}"][data-crit="${c.id}"]`);
-      const v = el?.value !== '' ? Number(el.value) : null;
-      if (v != null && !Number.isNaN(v)) { scores[c.id] = v; any = true; }
-    });
+    const { scores, reread } = readPicked(form, m.id);
     const text = form.querySelector(`.nb-text[data-member="${m.id}"]`)?.value.trim() || '';
     const lineText = form.querySelector(`.nb-line[data-member="${m.id}"]`)?.value.trim() || '';
     const lineIsBook = form.querySelector(`.nb-line-book[data-member="${m.id}"]`)?.checked || false;
-    if (!any && !text && !lineText) return;   // участница пока не заполняла — пропускаем
-    reviews[m.id] = { scores, text, line: lineText ? { kind: lineIsBook ? 'book' : 'club', text: lineText } : null };
+    // участник пока не заполнял — пропускаем
+    if (!Object.keys(scores).length && !text && !lineText && reread == null) return;
+    reviews[m.id] = {
+      scores, reread, text,
+      line: lineText ? { kind: lineIsBook ? 'book' : 'club', text: lineText } : null
+    };
   });
   return reviews;
 }

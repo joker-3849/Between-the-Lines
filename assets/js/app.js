@@ -6,6 +6,7 @@ import { initShelf, refreshShelf } from './shelf.js';
 import { initBook, showBook, closeBook, currentBookId } from './book.js';
 import { initPages, renderLines, renderChronicle, renderYear } from './pages.js';
 import { initAddBook } from './addbook.js';
+import { isEditing, confirmLeaveEditor } from './bookedit.js';
 
 const RENDERERS = {
   lines: renderLines,
@@ -47,8 +48,12 @@ function openBook(id, coverEl) {
 }
 
 function goto(name) {
-  if (currentView === 'book') closeBook(name === 'book' ? 'shelf' : name);
-  else setView(name);
+  if (currentView === 'book') {
+    if (!confirmLeaveEditor()) return;
+    closeBook(name === 'book' ? 'shelf' : name);
+  } else {
+    setView(name);
+  }
 }
 
 function fail(message) {
@@ -68,7 +73,12 @@ function fail(message) {
     return;
   }
 
-  initBook({ setView });
+  initBook({
+    setView,
+    // Название, оценка или жанр могли поменяться — полка и разделы должны
+    // это увидеть, не дожидаясь перезагрузки.
+    onBookChanged: () => refreshShelf()
+  });
   initPages(openBook);
   initShelf(openBook);
   initAddBook({
@@ -88,10 +98,16 @@ function fail(message) {
     goto('shelf');
   });
 
-  document.getElementById('backBtn').addEventListener('click', () => closeBook('shelf'));
+  document.getElementById('backBtn').addEventListener('click', () => {
+    if (confirmLeaveEditor()) closeBook('shelf');
+  });
 
   document.addEventListener('keydown', e => {
-    if (e.key === 'Escape' && currentView === 'book' && currentBookId()) closeBook('shelf');
+    // Пока карточка в режиме правки, Esc принадлежит форме, а не навигации:
+    // случайно закрыть страницу и потерять незаписанное не должно быть можно.
+    if (e.key === 'Escape' && currentView === 'book' && currentBookId() && !isEditing()) {
+      closeBook('shelf');
+    }
   });
 
   window.addEventListener('scroll', updateTopbar, { passive: true });

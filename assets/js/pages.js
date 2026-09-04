@@ -2,7 +2,7 @@
 
 import {
   state, avg, spread, allLines, fmtDate, nPlural, plural,
-  memberMean, yearOf, years, num
+  memberMean, memberScore, yearOf, years, num
 } from './data.js';
 import { coverHTML, mountCovers, avatarHTML, whoHTML, esc } from './ui.js';
 import { icon, hydrateIcons } from './icons.js';
@@ -124,8 +124,8 @@ function worst(list, fn) {
 
 function featureHTML({ label, book, text, showScores }) {
   const pills = showScores ? `<div class="yr-scores">${state.members.map(m => {
-    const v = book.reviews?.[m.id]?.scores?.overall;
-    return v == null ? '' : `<span class="yr-score-pill">${avatarHTML(m)}${v}</span>`;
+    const v = memberScore(book, m.id);
+    return v == null ? '' : `<span class="yr-score-pill">${avatarHTML(m)}${num(v)}</span>`;
   }).join('')}</div>` : '';
 
   return `<section class="yr-act">

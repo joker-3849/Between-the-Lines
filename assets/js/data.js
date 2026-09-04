@@ -64,23 +64,42 @@ export function addDraftBook(book) {
   return draft;
 }
 
-/* ── оценки ───────────────────────────────────────────────────────────── */
+/* ── оценки ───────────────────────────────────────────────────────────
+   Участник выставляет баллы только по критериям из club.json. Средний
+   балл нигде не хранится — он всегда считается из них, поэтому не может
+   разойтись с ними после правки. */
+
+export const OVERALL = 'overall';
+
+/** Балл участника: по конкретному критерию или средний по всем. */
+export function memberScore(book, memberId, critId = OVERALL) {
+  const scores = book.reviews?.[memberId]?.scores;
+  if (!scores) return undefined;
+  if (critId !== OVERALL) {
+    return typeof scores[critId] === 'number' ? scores[critId] : undefined;
+  }
+  const vals = state.criteria
+    .map(c => scores[c.id])
+    .filter(v => typeof v === 'number');
+  if (!vals.length) return undefined;
+  return vals.reduce((a, b) => a + b, 0) / vals.length;
+}
 
 /** Все оценки по критерию: [{member, value}] в порядке участников клуба. */
-export function scoresFor(book, critId = 'overall') {
+export function scoresFor(book, critId = OVERALL) {
   return state.members
-    .map(m => ({ member: m, value: book.reviews?.[m.id]?.scores?.[critId] }))
+    .map(m => ({ member: m, value: memberScore(book, m.id, critId) }))
     .filter(s => typeof s.value === 'number');
 }
 
-export function avg(book, critId = 'overall') {
+export function avg(book, critId = OVERALL) {
   const s = scoresFor(book, critId);
   if (!s.length) return null;
   return s.reduce((a, x) => a + x.value, 0) / s.length;
 }
 
 /** Разброс: максимум минус минимум. Чем больше — тем сильнее спорили. */
-export function spread(book, critId = 'overall') {
+export function spread(book, critId = OVERALL) {
   const s = scoresFor(book, critId).map(x => x.value);
   if (s.length < 2) return 0;
   return Math.max(...s) - Math.min(...s);
@@ -90,15 +109,26 @@ export function verdict(book) {
   // «Единогласно» имеет смысл только когда есть кого сравнивать между собой.
   if (scoresFor(book).length < 2) return null;
   const sp = spread(book);
-  if (sp >= 4) return { kind: 'split', label: 'спорная' };
+  if (sp >= 3) return { kind: 'split', label: 'спорная' };
   if (sp <= 1) return { kind: 'unison', label: 'единогласно' };
   return null;
+}
+
+/** Кто перечитает книгу, а кто нет. Участники без ответа не попадают никуда. */
+export function rereadTally(book) {
+  const yes = [], no = [];
+  state.members.forEach(m => {
+    const r = book.reviews?.[m.id]?.reread;
+    if (r === true) yes.push(m);
+    else if (r === false) no.push(m);
+  });
+  return { yes, no };
 }
 
 /** Средняя оценка участника по набору книг. */
 export function memberMean(memberId, books = state.books) {
   const vals = books
-    .map(b => b.reviews?.[memberId]?.scores?.overall)
+    .map(b => memberScore(b, memberId))
     .filter(v => typeof v === 'number');
   if (!vals.length) return null;
   return vals.reduce((a, b) => a + b, 0) / vals.length;

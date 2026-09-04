@@ -42,25 +42,24 @@
   ],
   "criteria": [
     {
-      "id": "overall",
-      "label": "Общая оценка",
-      "lead": true
-    },
-    {
       "id": "plot",
-      "label": "Сюжет"
-    },
-    {
-      "id": "style",
-      "label": "Язык"
+      "label": "Сюжет и структура"
     },
     {
       "id": "characters",
       "label": "Персонажи"
     },
     {
-      "id": "atmosphere",
-      "label": "Атмосфера"
+      "id": "style",
+      "label": "Ясность и выразительность языка"
+    },
+    {
+      "id": "themes",
+      "label": "Тематика и идеи"
+    },
+    {
+      "id": "emotion",
+      "label": "Эмоциональное воздействие"
     }
   ],
   "yearHighlights": {

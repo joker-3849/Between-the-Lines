@@ -23,9 +23,12 @@
   --serif:"Instrument Serif","Cormorant",Georgia,"Times New Roman",serif;
   --sans:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
 
-  --cover-w:196px;
-  --cover-h:294px;
-  --edge:24px;
+  /* Размер книги меняется плавно, а не ступенями: при сужении окна обложка
+     чуть уменьшается, а остальное добирает нахлёст — полка «сжимается»,
+     а не перестраивается рывком на каждом брейкпоинте. */
+  --cover-w:clamp(96px,13.6vw,196px);
+  --cover-h:calc(var(--cover-w) * 1.5);
+  --edge:calc(var(--cover-w) * .1224);
   --tilt:30deg;   /* насколько книга на полке развёрнута корешком к зрителю */
 
   --ease:cubic-bezier(.22,.68,.32,1);
@@ -176,16 +179,20 @@ img{max-width:100%;display:block}
 .now-countdown{display:block;font-size:12px;color:var(--faint);letter-spacing:.06em;margin-top:1px}
 
 /* ── панель фильтров ──────────────────────────────────────────────────── */
+/* Поиск, жанры, сортировка и переключатель обложек живут в одну строку и
+   никогда не переносятся: сжимается поиск, а список жанров превращается в
+   горизонтальный скроллер — видно несколько чипов, остальные прокручиваются. */
 .toolbar{
   max-width:var(--maxw);margin:clamp(30px,6vh,58px) auto 0;
   padding:0 var(--pad);
-  display:flex;align-items:center;gap:14px 20px;flex-wrap:wrap;
+  display:flex;align-items:center;gap:clamp(8px,1.4vw,16px);flex-wrap:nowrap;
 }
 .tb-search{
   display:flex;align-items:center;gap:9px;
   border:1px solid var(--rule);border-radius:999px;
   background:var(--raise);
-  padding:9px 16px;min-width:210px;flex:0 1 250px;
+  padding:9px clamp(11px,1.2vw,16px);
+  flex:0 1 230px;min-width:0;
   color:var(--faint);
   transition:border-color .2s var(--ease),background .2s var(--ease);
 }
@@ -196,7 +203,19 @@ img{max-width:100%;display:block}
 }
 .tb-search input::placeholder{color:var(--faint)}
 
-.tb-genres{display:flex;gap:7px;flex-wrap:wrap;flex:1 1 auto}
+/* Единственный элемент панели, которому позволено прокручиваться.
+   Маска справа показывает, что чипы продолжаются за краем. */
+.tb-genres{
+  display:flex;gap:7px;flex-wrap:nowrap;
+  flex:1 1 0%;min-width:0;
+  overflow-x:auto;overflow-y:hidden;
+  scrollbar-width:none;-ms-overflow-style:none;
+  padding-bottom:2px;
+  -webkit-mask-image:linear-gradient(90deg,#000 0,#000 calc(100% - 22px),transparent 100%);
+  mask-image:linear-gradient(90deg,#000 0,#000 calc(100% - 22px),transparent 100%);
+}
+.tb-genres::-webkit-scrollbar{display:none}
+.chip{flex:0 0 auto}
 .chip{
   border:1px solid var(--rule);border-radius:999px;
   padding:6px 15px;font-size:13px;color:var(--dim);
@@ -207,11 +226,11 @@ img{max-width:100%;display:block}
 .chip[aria-pressed="true"]{color:var(--void);background:var(--ink);border-color:var(--ink)}
 
 .tb-sort{
-  display:flex;align-items:center;gap:9px;
+  display:flex;align-items:center;gap:9px;flex:0 0 auto;
   color:var(--faint);
   border:1px solid var(--rule);border-radius:999px;
   background:var(--raise);
-  padding:9px 16px;
+  padding:9px clamp(11px,1.2vw,16px);
 }
 .tb-sort select{
   background:none;border:none;outline:none;
@@ -223,8 +242,7 @@ img{max-width:100%;display:block}
 
 /* переключатель обложек */
 .tb-covers{
-  display:flex;align-items:center;gap:8px;
-  margin-left:auto;
+  display:flex;align-items:center;gap:8px;flex:0 0 auto;
   color:var(--faint);
   border:1px solid var(--rule);border-radius:999px;
   padding:3px 4px 3px 12px;
@@ -236,6 +254,7 @@ img{max-width:100%;display:block}
   white-space:nowrap;
 }
 .seg:hover{color:var(--ink)}
+.seg-short{display:none}
 .seg[aria-pressed="true"]{color:var(--void);background:var(--ink)}
 
 .covers-hint{
@@ -486,6 +505,7 @@ img{max-width:100%;display:block}
   gap:clamp(34px,6vw,84px);
 }
 .bp-left{position:sticky;top:74px;align-self:start}
+.book-edit .bp-left{position:static}
 .bp-cover{
   aspect-ratio:2/3;width:100%;
   box-shadow:-12px 28px 56px rgba(58,32,20,.22);
@@ -797,7 +817,7 @@ img{max-width:100%;display:block}
 
 /* ── адаптив ──────────────────────────────────────────────────────────── */
 @media (max-width:1050px){
-  :root{--cover-w:150px;--cover-h:225px;--edge:17px}
+  .tb-sort select{max-width:150px}
   .book-page{grid-template-columns:1fr;gap:30px}
   .bp-left{position:static;max-width:230px}
   .lines-grid{columns:1}
@@ -808,19 +828,52 @@ img{max-width:100%;display:block}
   .now-meet{text-align:left}
 }
 /* Полка никогда не переносится на вторую строку: ряд, плитка и стопка всегда
-   в одну линию. Всё, что меняется на узких экранах, — размер книги; за
-   остальное отвечает нахлёст, который считает fitFrontRow() по факту. */
+   в одну линию. Размер книги меняется плавно через clamp() в :root, а
+   остальное добирает нахлёст, который fitFrontRow() считает по факту. */
+/* Панель остаётся в одну строку и на узких экранах: убираем ведущие иконки
+   у сортировки и переключателя, укорачиваем подписи, а поиск сжимаем до
+   иконки — он разворачивается обратно, как только в него встают курсором. */
 @media (max-width:820px){
-  :root{--cover-w:118px;--cover-h:177px;--edge:13px}
+  .tb-sort > .ic,.tb-covers > .ic{display:none}
+  .tb-sort select{max-width:126px}
+  .seg-long{display:none}
+  .seg-short{display:inline}
+  .seg{padding:5px 9px}
 }
 @media (max-width:620px){
-  :root{--cover-w:94px;--cover-h:141px;--edge:11px}
+  /* Книги и плитка остаются в одну строку всегда, а вот стопке места уже
+     физически нет: втроём они оставляют ряду меньше сотни пикселей, и семь
+     обложек превращаются в нечитаемые полоски. Поэтому на телефоне вниз
+     уходит только стопка — полка при этом не «едет», она просто шире. */
+  .shelf{flex-wrap:wrap}
+  .add-slot{margin-right:var(--pad)}
+  /* Планка рисуется под всей полкой, а стопка ушла вниз — линия оказалась бы
+     сильно ниже книг и читалась бы как чужой разделитель. Тень под обложками
+     и так держит их «на поверхности». */
+  .shelf-plank{display:none}
+  .pile{flex:0 0 100%;width:auto;margin:30px 0 0;padding:0 var(--pad)}
   .pile-head{font-size:10px;letter-spacing:.08em;gap:6px}
   .pb-title{font-size:14px}
+  .tb-search{flex:0 0 auto;padding:9px 12px}
+  .tb-search input{
+    width:0;padding:0;
+    transition:width .28s var(--ease);
+  }
+  .tb-search:focus-within{flex:1 1 auto}
+  .tb-search:focus-within input{width:auto;flex:1 1 auto;padding-left:2px}
+  /* Полоса жанров не должна схлопнуться в ноль — край чипа виден всегда,
+     иначе о том, что список прокручивается, невозможно догадаться. Но и
+     распирать строку она не должна, поэтому минимум привязан к ширине окна. */
+  .tb-genres{min-width:clamp(40px,12vw,64px)}
+  .tb-sort select{max-width:104px}
 }
 @media (max-width:460px){
-  :root{--cover-w:76px;--cover-h:114px;--edge:9px}
   .pile-book{height:34px}
+}
+@media (max-width:430px){
+  /* Самые узкие экраны: панель всё ещё в строку, но сортировка ужимается
+     до «Сначала…» — полный текст всё равно виден в раскрытом списке. */
+  .tb-sort select{max-width:72px}
 }
 @media (max-width:620px){
   .mainnav{gap:0}
@@ -912,7 +965,8 @@ figure,blockquote,dl,dd{margin:0}
 .add-book-btn{
   transform:none;
   width:var(--cover-w);height:var(--cover-h);
-  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:clamp(7px,calc(var(--cover-w) * .082),16px);
   border:1px solid var(--gold);border-radius:14px;
   background:var(--gold);
   color:#fdf1e4;
@@ -926,7 +980,9 @@ figure,blockquote,dl,dd{margin:0}
   box-shadow:0 18px 36px rgba(101,14,20,.3);
 }
 .add-plus{
-  width:40px;height:40px;border-radius:50%;
+  width:clamp(26px,calc(var(--cover-w) * .204),40px);
+  height:clamp(26px,calc(var(--cover-w) * .204),40px);
+  border-radius:50%;
   border:2.5px solid currentColor;
   display:flex;align-items:center;justify-content:center;
 }
@@ -934,7 +990,8 @@ figure,blockquote,dl,dd{margin:0}
 .add-plus .ic svg{stroke-width:2.6}
 .add-label{
   font-family:var(--sans);
-  font-size:15px;font-weight:800;letter-spacing:.01em;
+  font-size:clamp(11px,calc(var(--cover-w) * .077),15px);
+  font-weight:800;letter-spacing:.01em;
   line-height:1.3;text-align:center;
 }
 
@@ -1039,13 +1096,6 @@ figure,blockquote,dl,dd{margin:0}
 }
 .review-member[open] .review-member-hint{display:none}
 .review-body{padding:2px 2px 20px 28px}
-.score-grid{
-  display:grid;grid-template-columns:repeat(auto-fill,minmax(112px,1fr));
-  gap:14px;margin-bottom:18px;
-}
-.score-field{display:flex;flex-direction:column;gap:6px}
-.score-field span{font-size:11px;letter-spacing:.05em;color:var(--faint)}
-.score-field input{width:100%;border:1px solid var(--rule);border-radius:9px;padding:7px 10px;background:var(--raise);color:var(--ink);font-family:var(--sans)}
 input[type="number"]::-webkit-outer-spin-button,
 input[type="number"]::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
 input[type="number"]{-moz-appearance:textfield}
@@ -1083,3 +1133,121 @@ input[type="number"]{-moz-appearance:textfield}
 }
 
 .bp-avg-empty{color:var(--faint)}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   Правка карточки: та же страница, только поля вместо текста
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/* шапка карточки: название и кнопка правки на одной линии */
+.bp-head{
+  display:flex;align-items:flex-start;justify-content:space-between;
+  gap:18px;flex-wrap:wrap;
+}
+.bp-edit{flex:0 0 auto;margin-top:6px;white-space:nowrap}
+
+/* панель действий редактора — липкая, чтобы «Сохранить» не убегало вниз */
+.be-bar{
+  grid-column:1 / -1;
+  position:sticky;top:58px;z-index:20;
+  display:flex;align-items:center;gap:14px;flex-wrap:wrap;
+  padding:12px 16px;margin-bottom:6px;
+  border:1px solid var(--rule);border-radius:16px;
+  background:var(--void-2);
+  box-shadow:0 10px 26px rgba(var(--shadow),.09);
+}
+.be-bar-note{flex:1 1 220px;min-width:0;font-size:13px;color:var(--dim)}
+.be-bar-actions{display:flex;gap:10px;flex:0 0 auto}
+
+.be-facts{margin-top:22px;display:flex;flex-direction:column;gap:13px}
+.be-facts .field-row{display:flex;gap:12px}
+.be-facts .field-row .field{flex:1 1 0%;min-width:0}
+
+.be-members{display:flex;flex-direction:column;gap:14px}
+.be-member{
+  padding:18px clamp(14px,2vw,22px) 20px;
+  border:1px solid var(--rule);border-radius:18px;
+  background:var(--raise);
+}
+.be-member-head{
+  display:flex;align-items:center;gap:10px;
+  margin-bottom:16px;
+}
+.be-member-name{font-family:var(--serif);font-size:22px;line-height:1}
+.be-mean{
+  margin-left:auto;display:flex;align-items:baseline;gap:7px;
+  font-size:11px;letter-spacing:.13em;text-transform:uppercase;color:var(--faint);
+}
+.be-mean b{font-family:var(--serif);font-size:26px;font-weight:400;color:var(--gold);letter-spacing:0}
+
+/* ── кружки 1…10 ──────────────────────────────────────────────────────── */
+.pick{margin-bottom:14px}
+.pick-head{
+  display:flex;align-items:baseline;justify-content:space-between;gap:10px;
+  margin-bottom:7px;
+}
+.pick-label{font-size:13px;color:var(--dim);line-height:1.3}
+.pick-val{
+  font-family:var(--serif);font-size:19px;color:var(--gold);
+  min-width:1.4em;text-align:right;
+}
+/* Кружки тянутся по ширине колонки: десять штук помещаются и на телефоне,
+   не превращаясь при этом в марки на широком экране. */
+.pick-row{display:flex;gap:clamp(3px,.7vw,7px)}
+.pip{
+  flex:1 1 0%;min-width:0;
+  aspect-ratio:1;max-width:38px;
+  display:flex;align-items:center;justify-content:center;
+  border:1px solid var(--rule);border-radius:50%;
+  font-size:clamp(11px,1.1vw,13px);color:var(--faint);
+  font-variant-numeric:tabular-nums;
+  transition:color .16s var(--ease),background .16s var(--ease),
+             border-color .16s var(--ease),transform .16s var(--ease);
+}
+.pip:hover{color:var(--ink);border-color:var(--ghost);transform:translateY(-2px)}
+.pip.on{
+  color:#fdf1e4;background:var(--gold);border-color:var(--gold);
+  box-shadow:0 4px 12px rgba(101,14,20,.28);
+}
+/* Всё до выбранной цифры подсвечивается мягко — шкала читается как заполненная. */
+.pick-row:has(.pip.on) .pip:not(.on){background:transparent}
+.pick[data-value] .pip.on ~ .pip{opacity:.7}
+
+/* ── перечитаешь? ─────────────────────────────────────────────────────── */
+.reread-pick{
+  display:flex;align-items:center;gap:14px;flex-wrap:wrap;
+  margin:18px 0 6px;padding-top:15px;
+  border-top:1px solid var(--rule);
+}
+.rr-choice{display:flex;gap:8px}
+.rr-btn{
+  display:inline-flex;align-items:center;gap:7px;
+  padding:7px 16px;border-radius:999px;
+  border:1px solid var(--rule);
+  font-size:13px;color:var(--dim);
+  transition:color .18s var(--ease),background .18s var(--ease),border-color .18s var(--ease);
+}
+.rr-btn:hover{color:var(--ink);border-color:var(--ghost)}
+.rr-btn.on{color:#fdf1e4;background:var(--gold);border-color:var(--gold)}
+
+/* ── «Перечитаешь?» в режиме чтения ───────────────────────────────────── */
+.reread{
+  display:flex;gap:clamp(16px,3vw,44px);flex-wrap:wrap;
+  padding:16px 0 4px;
+}
+.rr-side{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.rr-label{
+  font-size:11px;letter-spacing:.16em;text-transform:uppercase;
+  padding:4px 12px;border-radius:999px;
+}
+.rr-yes .rr-label{color:#3f7a52;border:1px solid rgba(63,122,82,.4)}
+.rr-no  .rr-label{color:#a5432f;border:1px solid rgba(165,67,47,.4)}
+.rr-who{display:flex}
+.rr-who .who-dot{margin-right:-7px;border:2px solid var(--void)}
+.rr-names{font-size:14px;color:var(--dim)}
+
+/* ── средний балл в шапке карточки ────────────────────────────────────── */
+.bp-avg-label{
+  font-size:11px;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--faint);line-height:1.5;
+}
+.bp-avg-label small{font-size:10px;letter-spacing:.08em;text-transform:none;opacity:.8}

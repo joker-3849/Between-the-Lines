@@ -158,12 +158,18 @@ function pileHTML(rest) {
    плотнее, если нет. Считается ровно один раз на кадр после отрисовки,
    когда браузер уже знает реальную ширину .shelf-front. */
 const OVERLAP_MIN = 0.18;
-const OVERLAP_MAX = 0.88;   // на узких экранах книги встают внахлёст плотнее, но не пропадают совсем
+// Плотнее этого книги не жмутся: при 0.8 от обложки наружу остаётся полоска
+// в пятую часть ширины — по ней ещё можно попасть пальцем. Всё, что тесноты
+// требует сверх этого, решается тем, что стопка уходит на свою строку.
+const OVERLAP_MAX = 0.80;
 
 /** Подгоняет нахлёст между обложками под фактическую ширину ряда. */
 function fitFrontRow(front, count) {
   if (!count) return;
-  const coverW = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--cover-w')) || 196;
+  // Ширину берём с самой книги, а не из --cover-w: значение переменной
+  // приходит из getComputedStyle нерассчитанным (clamp(96px,13.6vw,196px)
+  // так и останется строкой), а offsetWidth уже знает реальный размер.
+  const coverW = front.querySelector('.book3d')?.offsetWidth || 196;
   const cs = getComputedStyle(front);
   const available = front.clientWidth - parseFloat(cs.paddingLeft || 0) - parseFloat(cs.paddingRight || 0);
 

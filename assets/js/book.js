@@ -1,11 +1,12 @@
 /* Страница книги: мнения сгруппированы по критериям, а не по участникам.
    Открывается плавным перелётом обложки с полки (FLIP). */
 
-import { state, avg, spread, verdict, scoresFor, fmtDate, nPlural, num } from './data.js';
-import { coverHTML, mountCovers, critHTML, whoHTML, esc, stagger } from './ui.js';
+import { state, avg, spread, verdict, scoresFor, rereadTally, fmtDate, nPlural, plural, num } from './data.js';
+import { coverHTML, mountCovers, critHTML, whoHTML, avatarHTML, esc, stagger } from './ui.js';
 import { hydrateIcons } from './icons.js';
 import { coverOnShelf } from './shelf.js';
 import { showBookJSON } from './addbook.js';
+import { openBookEditor } from './bookedit.js';
 
 const reduced = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
@@ -33,11 +34,16 @@ function factsHTML(book) {
     .join('')}</dl>`;
 }
 
+/* Сайт читает полку из JSON в репозитории и сам в файлы не пишет, поэтому
+   и новая книга, и правки существующей живут только в памяти страницы —
+   баннер честно об этом говорит и отдаёт готовый JSON. */
 function draftBannerHTML(book) {
-  if (!book._draft) return '';
+  if (!book._draft && !book._edited) return '';
   return `<div class="draft-banner">
-    <span class="badge draft">черновик</span>
-    <span>Появилась только на этой странице — ещё не сохранена в data/books.json.</span>
+    <span class="badge draft">${book._draft ? 'черновик' : 'изменено'}</span>
+    <span>${book._draft
+      ? 'Появилась только на этой странице — ещё не сохранена в data/books.json.'
+      : 'Правки видны только на этой странице — в data/books.json они ещё не попали.'}</span>
     <button type="button" class="link" id="showDraftJson">Показать JSON для вставки</button>
   </div>`;
 }
@@ -49,7 +55,7 @@ function verdictHTML(book) {
   if (!scores.length) {
     return `<div class="bp-verdict">
       <span class="bp-avg bp-avg-empty">—</span>
-      <span class="bp-verdict-note">Мнений пока нет — самое время дозаполнить.</span>
+      <span class="bp-verdict-note">Оценок пока нет — нажмите «Внести изменения» и заполните.</span>
     </div>`;
   }
 
@@ -59,15 +65,30 @@ function verdictHTML(book) {
     ? ''
     : scores.length === 1
       ? `Оценил${scores[0].member.g === 'm' ? '' : 'а'} пока только ${scores[0].member.name}.`
-      : sp === 0
+      : sp < 0.05
         ? 'Все сошлись на одной оценке — такое случается редко.'
-        : `Оценки разошлись на ${nPlural(sp, 'балл', 'балла', 'баллов')} из ${state.club.scale}.`;
+        : `Средние баллы участников разошлись на ${num(sp)} `
+          + `${plural(Math.round(sp), 'балл', 'балла', 'баллов')} из ${state.club.scale}.`;
 
   return `<div class="bp-verdict">
     <span class="bp-avg">${num(mean)}<small>/${state.club.scale}</small></span>
+    <span class="bp-avg-label">средний балл<br><small>считается по критериям</small></span>
     ${v ? `<span class="badge ${v.kind}">${esc(v.label)}</span>` : ''}
     <span class="bp-verdict-note">${esc(note)}</span>
   </div>`;
+}
+
+/** «Перечитаешь?» — ответ каждого участника, да и нет рядом. */
+function rereadHTML(book) {
+  const { yes, no } = rereadTally(book);
+  if (!yes.length && !no.length) return '';
+  const side = (list, kind, label) => !list.length ? '' : `<div class="rr-side rr-${kind}">
+    <span class="rr-label">${label}</span>
+    <span class="rr-who">${list.map(m => avatarHTML(m)).join('')}</span>
+    <span class="rr-names">${list.map(m => esc(m.name)).join(', ')}</span>
+  </div>`;
+  return `<h2 class="section-h">Перечитаешь?</h2>
+    <div class="reread">${side(yes, 'yes', 'да')}${side(no, 'no', 'нет')}</div>`;
 }
 
 function impressionsHTML(book) {
@@ -106,11 +127,19 @@ function render(book) {
       ${factsHTML(book)}
     </div>
     <div class="bp-right">
-      <h1 class="bp-title">${esc(book.title)}</h1>
-      <p class="bp-author">${esc(book.author)}</p>
+      <div class="bp-head">
+        <div>
+          <h1 class="bp-title">${esc(book.title)}</h1>
+          <p class="bp-author">${esc(book.author)}</p>
+        </div>
+        <button type="button" class="btn btn-ghost bp-edit" id="editBook">
+          <span class="ic" data-icon="pencil"></span> Внести изменения
+        </button>
+      </div>
       ${verdictHTML(book)}
       <h2 class="section-h">Оценки клуба</h2>
       ${state.criteria.map(c => critHTML(book, c)).join('') || '<p class="bp-verdict-note">Пока никто не оценил.</p>'}
+      ${rereadHTML(book)}
       ${impressionsHTML(book)}
       ${takenHTML(book)}
     </div>
@@ -119,6 +148,17 @@ function render(book) {
   hydrateIcons(view);
   mountCovers(view);
   view.querySelector('#showDraftJson')?.addEventListener('click', () => showBookJSON(book));
+  view.querySelector('#editBook')?.addEventListener('click', () => {
+    openBookEditor(book, { onDone: () => rerender(book) });
+  });
+  return view;
+}
+
+/** Перерисовать карточку после правок — без перелёта обложки. */
+function rerender(book) {
+  const view = render(book);
+  mountCovers(view);
+  deps.onBookChanged?.(book);
   return view;
 }
 
