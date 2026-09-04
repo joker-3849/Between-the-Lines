@@ -8,58 +8,14 @@ import { avatarHTML, isbnCoverURL, esc,
          scorePickerHTML, rereadPickerHTML, wirePickers, readPicked, pickedMean } from './ui.js';
 import { randomArt, motifSVG } from './covers.js';
 import { icon, hydrateIcons } from './icons.js';
+import { openModal, closeModal, initModal } from './modal.js';
 
 let onAdded = () => {};
 let art = null;
 
 export function initAddBook(opts) {
   onAdded = opts.onAdded || onAdded;
-  ensureModal();
-}
-
-/* ── модальное окно: общий каркас ────────────────────────────────────── */
-
-function ensureModal() {
-  if (document.getElementById('addBookModal')) return;
-  const div = document.createElement('div');
-  div.innerHTML = `<div class="modal-overlay" id="addBookModal" hidden>
-    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
-      <div class="modal-head">
-        <h2 id="modalTitle">Добавить книгу</h2>
-        <button type="button" class="modal-close" id="modalClose" aria-label="Закрыть">${icon('x')}</button>
-      </div>
-      <div class="modal-body" id="modalBody"></div>
-    </div>
-  </div>`;
-  document.body.appendChild(div.firstElementChild);
-
-  const overlay = document.getElementById('addBookModal');
-  document.getElementById('modalClose').addEventListener('click', closeModal);
-  overlay.addEventListener('click', e => { if (e.target === overlay) closeModal(); });
-  document.addEventListener('keydown', e => {
-    if (e.key === 'Escape' && !overlay.hidden) {
-      closeModal();
-      // Пока открыт диалог, Esc принадлежит только ему — иначе тот же
-      // нажатие следом закрыло бы ещё и страницу книги под ним.
-      e.stopImmediatePropagation();
-    }
-  });
-}
-
-function openModal(title, bodyHTML) {
-  ensureModal();
-  document.getElementById('modalTitle').textContent = title;
-  document.getElementById('modalBody').innerHTML = bodyHTML;
-  document.getElementById('addBookModal').hidden = false;
-  document.body.style.overflow = 'hidden';
-  hydrateIcons(document.getElementById('modalBody'));
-}
-
-function closeModal() {
-  const overlay = document.getElementById('addBookModal');
-  if (!overlay) return;
-  overlay.hidden = true;
-  document.body.style.overflow = '';
+  initModal();
 }
 
 /* ── форма ────────────────────────────────────────────────────────────── */

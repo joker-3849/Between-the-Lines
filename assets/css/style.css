@@ -1513,3 +1513,58 @@ input[type="number"]{-moz-appearance:textfield}
   margin-top:14px;text-align:center;
   font-size:12px;line-height:1.5;color:var(--dim);
 }
+
+/* ══════════════════════════════════════════════════════════════════════════
+   «Поделиться»: карусель карточек 9:16
+   ══════════════════════════════════════════════════════════════════════════ */
+
+.modal-share{max-width:min(760px,94vw)}
+.share-hint{margin:-4px 0 18px}
+
+.share-strip{
+  display:flex;gap:18px;
+  overflow-x:auto;
+  scroll-snap-type:x mandatory;
+  scroll-padding:0 calc(50% - 105px);
+  padding:4px 2px 8px;
+  scrollbar-width:none;
+}
+.share-strip::-webkit-scrollbar{display:none}
+
+.share-card{
+  flex:0 0 auto;margin:0;
+  scroll-snap-align:center;
+  display:flex;flex-direction:column;align-items:center;gap:10px;
+  width:210px;
+}
+.share-canvas{
+  width:210px;height:373px;         /* 9:16 */
+  display:block;border-radius:14px;
+  background:var(--raise);
+  box-shadow:0 10px 26px rgba(var(--shadow),.16);
+}
+.share-card figcaption{
+  font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--faint);
+  text-align:center;
+}
+.share-dl{padding:7px 16px;font-size:13px}
+
+.share-dots{display:flex;justify-content:center;gap:7px;margin-top:6px}
+.share-dot{
+  width:7px;height:7px;border-radius:50%;
+  background:var(--ghost);
+  transition:background .2s var(--ease),transform .2s var(--ease);
+}
+.share-dot[aria-current]{background:var(--gold);transform:scale(1.3)}
+
+/* Кнопки действий на карточке книги стоят рядом и не переносятся по одной. */
+.section-head .bp-share{flex:0 0 auto;white-space:nowrap}
+
+@media (max-width:620px){
+  .share-card,.share-canvas{width:180px}
+  .share-canvas{height:320px}
+  .share-strip{scroll-padding:0 calc(50% - 90px)}
+  /* На узком экране заголовок и две кнопки в строку не помещаются. */
+  .section-head{flex-wrap:wrap}
+  .section-head .section-h{flex:1 1 100%;margin-bottom:12px}
+}

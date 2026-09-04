@@ -9,6 +9,7 @@ import { mountTilt, tiltWrap } from './tilt.js';
 import { coverOnShelf } from './shelf.js';
 import { showBookJSON } from './addbook.js';
 import { openBookEditor } from './bookedit.js';
+import { openShareModal } from './share.js';
 
 const reduced = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
@@ -91,6 +92,9 @@ function render(book) {
 
       <div class="section-head">
         <h2 class="section-h">Оценки клуба</h2>
+        <button type="button" class="btn btn-ghost bp-share" id="shareBook">
+          <span class="ic" data-icon="share"></span> Поделиться
+        </button>
         <button type="button" class="btn btn-ghost bp-edit" id="editBook">
           <span class="ic" data-icon="pencil"></span> Внести изменения
         </button>
@@ -113,6 +117,7 @@ function render(book) {
   mountCovers(view);
   mountTilt(view);
   view.querySelector('#showDraftJson')?.addEventListener('click', () => showBookJSON(book));
+  view.querySelector('#shareBook')?.addEventListener('click', () => openShareModal(book));
   view.querySelector('#editBook')?.addEventListener('click', () => {
     openBookEditor(book, { onDone: () => rerender(book) });
   });
