@@ -9,7 +9,7 @@
  * подхватывается сама. Шрифты — те же Instrument Serif и Inter; перед
  * отрисовкой их загрузку нужно дождаться (ensureFonts). */
 
-import { state, avg, memberScore, rereadTally, num, fmtDate } from './data.js';
+import { state, avg, memberScore, num, fmtDate } from './data.js';
 import { artOf } from './ui.js';
 
 export const W = 1080;
@@ -134,6 +134,24 @@ function bigScore(ctx, mean, { x, y, color, sub }) {
     ctx.globalAlpha = 1;
     ctx.letterSpacing = '0px';
   }
+}
+
+/** Бейдж-пилюля: рамка и мелкая прописная подпись, как на самом сайте. */
+function badge(ctx, text, x, y, color) {
+  ctx.font = `500 24px ${SANS}`;
+  ctx.letterSpacing = '3px';
+  ctx.textAlign = 'left';
+  const label = text.toUpperCase();
+  const w = ctx.measureText(label).width + 40;
+  const h = 44;
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 2;
+  roundRect(ctx, x, y - h / 2, w, h, h / 2);
+  ctx.stroke();
+  ctx.fillStyle = color;
+  ctx.fillText(label, x + 20, y + 9);
+  ctx.letterSpacing = '0px';
+  return w;
 }
 
 function avatar(ctx, member, x, y, r) {
@@ -330,9 +348,8 @@ function drawScores(ctx, book) {
     ctx.fillText(m.name, 234, y - 8);
 
     if (reread != null) {
-      ctx.font = `500 25px ${SANS}`;
-      ctx.fillStyle = reread ? '#4f8f66' : '#c07a68';
-      ctx.fillText(reread ? 'перечитает' : 'не перечитает', 234, y + 36);
+      badge(ctx, reread ? 'перечитает' : 'не перечитает', 234, y + 30,
+            reread ? '#4f8f66' : '#c07a68');
     }
 
     ctx.textAlign = 'right';
@@ -462,74 +479,75 @@ function drawRadar(ctx, book) {
   footer(ctx, p, art.fg);
 }
 
-/* ── карточка 5: перечитаешь? ─────────────────────────────────────────── */
+/* ── карточка 5: впечатление участницы ────────────────────────────────── */
 
-function drawReread(ctx, book) {
+/**
+ * Отзыв целиком, по одной карточке на человека. Кегль подбирается под длину:
+ * короткое впечатление читается крупно, длинное всё равно помещается.
+ */
+function drawImpression(ctx, book, { member, text }) {
   const p = palette();
   const art = artOf(book);
-  const { yes, no } = rereadTally(book);
-  const total = yes.length + no.length;
 
   ctx.fillStyle = p.paper;
   ctx.fillRect(0, 0, W, H);
 
-  ctx.textAlign = 'center';
-  ctx.font = `500 26px ${SANS}`;
-  ctx.letterSpacing = '8px';
-  ctx.fillStyle = p.faint;
-  ctx.fillText('ПЕРЕЧИТАЕШЬ?', W / 2, 260);
-  ctx.letterSpacing = '0px';
+  // Цветная полоса сверху — цвет участницы, чтобы карточки различались.
+  ctx.fillStyle = member.color;
+  ctx.fillRect(0, 0, W, 10);
+  ctx.globalAlpha = .16;
+  const g = ctx.createLinearGradient(0, 0, 0, 620);
+  g.addColorStop(0, member.color);
+  g.addColorStop(1, 'rgba(255,255,255,0)');
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, W, 620);
+  ctx.globalAlpha = 1;
 
-  const cx = W / 2, cy = 780, r = 250, lw = 74;
-  ctx.lineWidth = lw;
-  ctx.strokeStyle = '#c07a68';
-  ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.stroke();
-  if (yes.length) {
-    ctx.strokeStyle = '#4f8f66';
-    ctx.beginPath();
-    ctx.arc(cx, cy, r, -Math.PI / 2, -Math.PI / 2 + (yes.length / total) * Math.PI * 2);
-    ctx.stroke();
+  avatar(ctx, member, W / 2, 260, 62);
+
+  ctx.textAlign = 'center';
+  ctx.font = `400 56px ${SERIF}`;
+  ctx.fillStyle = p.ink;
+  ctx.fillText(member.name, W / 2, 400);
+
+  const mine = memberScore(book, member.id);
+  if (mine != null) {
+    ctx.font = `500 26px ${SANS}`;
+    ctx.letterSpacing = '5px';
+    ctx.fillStyle = p.gold;
+    ctx.fillText(`${num(mine)} ИЗ ${scale()}`, W / 2, 456);
+    ctx.letterSpacing = '0px';
   }
 
-  ctx.font = `400 200px ${SERIF}`;
-  ctx.fillStyle = p.ink;
-  ctx.fillText(String(yes.length), cx, cy + 40);
-  ctx.font = `500 28px ${SANS}`;
-  ctx.letterSpacing = '5px';
-  ctx.fillStyle = p.faint;
-  ctx.fillText(`ИЗ ${total}`, cx, cy + 110);
-  ctx.letterSpacing = '0px';
+  const len = String(text).length;
+  const [size, lh] = len <= 160 ? [64, 80]
+    : len <= 380 ? [52, 66]
+    : len <= 700 ? [44, 56]
+    : [38, 48];
 
-  let y = 1180;
-  const side = (list, label, color) => {
-    if (!list.length) return;
-    ctx.textAlign = 'center';
-    ctx.font = `500 28px ${SANS}`;
-    ctx.letterSpacing = '5px';
-    ctx.fillStyle = color;
-    ctx.fillText(label, W / 2, y);
-    ctx.letterSpacing = '0px';
-    ctx.font = `400 46px ${SERIF}`;
-    ctx.fillStyle = p.ink;
-    ctx.fillText(list.map(m => m.name).join(', '), W / 2, y + 66);
-    y += 170;
+  const top = 580, bottomLimit = H - 440;
+  const opts = {
+    maxW: 860, font: `400 ${size}px ${SERIF}`, lh,
+    maxLines: Math.max(4, Math.floor((bottomLimit - top) / lh))
   };
-  side(yes, 'ДА', '#4f8f66');
-  side(no, 'НЕТ', '#c07a68');
+  const h = paraHeight(ctx, text, opts);
+  const y = top + Math.max(0, (bottomLimit - top - h) / 2);
+  para(ctx, text, { ...opts, x: W / 2, y, color: p.ink });
 
   ctx.fillStyle = art.acc;
-  ctx.globalAlpha = .25;
-  roundRect(ctx, 120, H - 470, W - 240, 4, 2);
+  ctx.globalAlpha = .3;
+  roundRect(ctx, 120, H - 410, W - 240, 4, 2);
   ctx.fill();
   ctx.globalAlpha = 1;
 
   const tb = para(ctx, book.title, {
-    x: W / 2, y: H - 370, maxW: 840, font: `400 62px ${SERIF}`,
-    color: p.ink, lh: 72, maxLines: 2
+    x: W / 2, y: H - 320, maxW: 840, font: `400 56px ${SERIF}`,
+    color: p.ink, lh: 64, maxLines: 2
   });
   ctx.font = `italic 400 34px ${SERIF}`;
   ctx.fillStyle = p.dim;
-  ctx.fillText(book.author, W / 2, tb + 60);
+  ctx.textAlign = 'center';
+  ctx.fillText(book.author, W / 2, tb + 58);
   footer(ctx, p, p.faint);
 }
 
@@ -565,15 +583,20 @@ export function cardsFor(book) {
     });
   });
 
+  state.members.forEach(m => {
+    const text = book.reviews?.[m.id]?.text;
+    if (!text) return;
+    cards.push({
+      id: `note-${m.id}`,
+      name: `Впечатление · ${m.name}`,
+      draw: c => drawImpression(c, book, { member: m, text })
+    });
+  });
+
   const rated = state.members.filter(m => memberScore(book, m.id) != null);
   if (rated.length) {
     cards.push({ id: 'scores', name: 'Оценки', draw: c => drawScores(c, book) });
     cards.push({ id: 'radar', name: 'Профиль', draw: c => drawRadar(c, book) });
-  }
-
-  const { yes, no } = rereadTally(book);
-  if (yes.length + no.length) {
-    cards.push({ id: 'reread', name: 'Перечитаешь?', draw: c => drawReread(c, book) });
   }
   return cards;
 }
