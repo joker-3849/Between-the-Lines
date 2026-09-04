@@ -1,8 +1,9 @@
 /* Страница книги: мнения сгруппированы по критериям, а не по участникам.
    Открывается плавным перелётом обложки с полки (FLIP). */
 
-import { state, avg, spread, verdict, scoresFor, rereadTally, fmtDate, nPlural, numPlural, num } from './data.js';
-import { coverHTML, mountCovers, critHTML, whoHTML, avatarHTML, esc, stagger } from './ui.js';
+import { state, spread, verdict, scoresFor, fmtDate, nPlural, numPlural, num } from './data.js';
+import { coverHTML, mountCovers, whoHTML, esc, stagger } from './ui.js';
+import { gaugeHTML, radarHTML, rereadRingHTML, memberCardsHTML } from './charts.js';
 import { hydrateIcons } from './icons.js';
 import { coverOnShelf } from './shelf.js';
 import { showBookJSON } from './addbook.js';
@@ -50,7 +51,6 @@ function draftBannerHTML(book) {
 
 function verdictHTML(book) {
   const scores = scoresFor(book);
-  const mean = avg(book);
 
   if (!scores.length) {
     return `<div class="bp-verdict">
@@ -71,24 +71,9 @@ function verdictHTML(book) {
           + `${numPlural(sp, 'балл', 'балла', 'баллов')} из ${state.club.scale}.`;
 
   return `<div class="bp-verdict">
-    <span class="bp-avg">${num(mean)}<small>/${state.club.scale}</small></span>
-    <span class="bp-avg-label">средний балл<br><small>считается по критериям</small></span>
     ${v ? `<span class="badge ${v.kind}">${esc(v.label)}</span>` : ''}
     <span class="bp-verdict-note">${esc(note)}</span>
   </div>`;
-}
-
-/** «Перечитаешь?» — ответ каждого участника, да и нет рядом. */
-function rereadHTML(book) {
-  const { yes, no } = rereadTally(book);
-  if (!yes.length && !no.length) return '';
-  const side = (list, kind, label) => !list.length ? '' : `<div class="rr-side rr-${kind}">
-    <span class="rr-label">${label}</span>
-    <span class="rr-who">${list.map(m => avatarHTML(m)).join('')}</span>
-    <span class="rr-names">${list.map(m => esc(m.name)).join(', ')}</span>
-  </div>`;
-  return `<h2 class="section-h">Перечитаешь?</h2>
-    <div class="reread">${side(yes, 'yes', 'да')}${side(no, 'no', 'нет')}</div>`;
 }
 
 function impressionsHTML(book) {
@@ -137,9 +122,15 @@ function render(book) {
         </button>
       </div>
       ${verdictHTML(book)}
-      <h2 class="section-h">Оценки клуба</h2>
-      ${state.criteria.map(c => critHTML(book, c)).join('') || '<p class="bp-verdict-note">Пока никто не оценил.</p>'}
-      ${rereadHTML(book)}
+      ${scoresFor(book).length ? `
+        <h2 class="section-h">Оценки клуба</h2>
+        <div class="bp-widgets">
+          ${gaugeHTML(book)}
+          ${radarHTML(book)}
+          ${rereadRingHTML(book)}
+        </div>
+        ${memberCardsHTML(book)}
+      ` : '<p class="bp-verdict-note">Пока никто не оценил.</p>'}
       ${impressionsHTML(book)}
       ${takenHTML(book)}
     </div>

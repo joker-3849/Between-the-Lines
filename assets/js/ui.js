@@ -1,6 +1,6 @@
 /* Общие UI-кирпичики: обложка, аватар участника, шкала оценок. */
 
-import { state, scoresFor, avg, num } from './data.js';
+import { state, num } from './data.js';
 import { icon } from './icons.js';
 import { motifSVG, DEFAULT_ART } from './covers.js';
 import * as settings from './settings.js';
@@ -110,51 +110,6 @@ export function whoHTML(member, extra = '') {
 export function avatarHTML(member, cls = '') {
   return `<span class="who-dot ${cls}" style="--c:${esc(member.color)}"
     title="${esc(member.name)}">${esc(member.initial)}</span>`;
-}
-
-/* ── шкала одного критерия ────────────────────────────────────────────── */
-
-const PAD = 4;        // отступ шкалы от краёв, %
-const SPAN = 100 - PAD * 2;
-
-function pos(value, scale) {
-  return PAD + ((value - 1) / (scale - 1)) * SPAN;
-}
-
-/**
- * Одна строка: название критерия, среднее и точки участников на оси 1…N.
- * Совпадающие оценки поднимаются друг над другом, чтобы не слипались.
- */
-export function critHTML(book, crit) {
-  const scale = state.club.scale || 10;
-  const scores = scoresFor(book, crit.id);
-  if (!scores.length) return '';
-
-  const mean = avg(book, crit.id);
-  const byValue = new Map();
-
-  const dots = scores.map(({ member, value }) => {
-    const n = byValue.get(value) || 0;
-    byValue.set(value, n + 1);
-    return `<span class="dot" style="--c:${esc(member.color)};left:${pos(value, scale).toFixed(2)}%;--lift:${-n * 22}px"
-      data-v="${value}" title="${esc(member.name)}: ${value} из ${scale}">${esc(member.initial)}</span>`;
-  }).join('');
-
-  // Насколько высоко пришлось складывать совпавшие оценки.
-  const stack = Math.max(...byValue.values());
-
-  return `<div class="crit">
-    <div class="crit-head">
-      <span class="crit-label">${esc(crit.label)}</span>
-      <span class="crit-avg">${num(mean)}<small> / ${scale}</small></span>
-    </div>
-    <div class="crit-scale" style="--stack:${stack}">
-      <div class="crit-track"></div>
-      <div class="crit-avgline" style="left:${pos(mean, scale).toFixed(2)}%"></div>
-      ${dots}
-      <div class="crit-ends"><span>1</span><span>${scale}</span></div>
-    </div>
-  </div>`;
 }
 
 /* ── прочее ───────────────────────────────────────────────────────────── */

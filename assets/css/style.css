@@ -93,12 +93,15 @@ img{max-width:100%;display:block}
 /* ── верхняя панель ───────────────────────────────────────────────────── */
 .topbar{
   position:sticky;top:0;z-index:80;
-  display:flex;align-items:center;justify-content:space-between;gap:24px;
+  /* Сетка, а не space-between: слева кнопка «На полку», справа меню, и
+     ширины у них разные — при space-between вордмарк уезжал от центра. */
+  display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:24px;
   padding:14px var(--pad);
   background:linear-gradient(to bottom,var(--void) 62%,transparent);
   backdrop-filter:blur(8px);
 }
 .wordmark{
+  grid-column:2;justify-self:center;
   font-family:var(--serif);
   font-size:19px;letter-spacing:.01em;
   color:var(--ink);text-decoration:none;
@@ -110,12 +113,16 @@ img{max-width:100%;display:block}
 .wm-the{font-style:italic;color:var(--faint)}
 
 .topbar-back{
+  grid-column:1;justify-self:start;
   display:inline-flex;align-items:center;gap:8px;
   font-size:13px;color:var(--dim);letter-spacing:.02em;
   transition:color .2s var(--ease);
 }
 .topbar-back:hover{color:var(--ink)}
+/* grid-area держит колонку за кнопкой, даже когда её нет, — иначе меню
+   переезжает в первую колонку и вордмарк снова уходит с центра. */
 .topbar-back[hidden]{display:none}
+.mainnav{grid-column:3;justify-self:end}
 
 .mainnav{display:flex;gap:4px;flex-wrap:wrap;justify-content:flex-end}
 .navlink{
@@ -241,6 +248,10 @@ img{max-width:100%;display:block}
     #000 calc(100% - var(--fade-r)),transparent 100%);
   transition:--fade-l .2s linear,--fade-r .2s linear;
 }
+/* Полосу можно тянуть мышью — курсор об этом и сообщает. */
+.tb-genres{cursor:grab}
+.tb-genres.dragging{cursor:grabbing;scroll-behavior:auto}
+.tb-genres.dragging .chip{pointer-events:none}
 .tb-genres.can-left{--fade-l:30px}
 .tb-genres.can-right{--fade-r:30px}
 .tb-genres::-webkit-scrollbar{display:none}
@@ -257,7 +268,7 @@ img{max-width:100%;display:block}
 .chip[aria-pressed="true"]{color:var(--void);background:var(--ink);border-color:var(--ink)}
 
 .tb-sort{
-  display:flex;align-items:center;gap:9px;flex:0 0 auto;
+  display:flex;align-items:center;flex:0 0 auto;
   height:var(--ctl-h);
   color:var(--faint);
   border:1px solid var(--rule);border-radius:999px;
@@ -403,7 +414,9 @@ img{max-width:100%;display:block}
 .slot:hover + .slot{z-index:3}
 .slot:has(+ .slot:hover) .book3d,
 .slot:hover + .slot .book3d{
-  transform:rotateY(calc(var(--tilt) * .82)) translateY(-9px) scale(1.01);
+  /* Угол тот же, что в покое: разворачивается только та книга, на которую
+     навели, — соседи лишь чуть приподнимаются вслед за ней. */
+  transform:rotateY(var(--tilt)) translateY(-11px);
   filter:brightness(.95);
 }
 .book3d .cover{
@@ -491,10 +504,6 @@ img{max-width:100%;display:block}
   background:linear-gradient(102deg,rgba(255,255,255,.22),transparent 20%,transparent 84%,rgba(58,32,20,.2));
 }
 .book3d .cover{font-size:calc(var(--cover-w) * .088)}
-/* Правый край книги уходит от зрителя, текст туда заводить нельзя —
-   поэтому у наклонённой обложки поле справа шире, а «центр» смещён влево
-   ровно настолько, чтобы после разворота читаться посередине. */
-.book3d .cf-top,.book3d .cf-text{padding-right:26%}
 .cf-genre{font-size:.62em;letter-spacing:.15em;text-transform:uppercase;opacity:.6}
 .cf-text{text-align:center}
 .cf-title{
@@ -617,6 +626,7 @@ img{max-width:100%;display:block}
 }
 .bp-avg{font-family:var(--serif);font-size:52px;line-height:1;color:var(--gold)}
 .bp-avg small{font-size:19px;color:var(--faint);margin-left:2px}
+/* Осталась только заглушка «—», когда книгу ещё никто не оценил. */
 .bp-verdict-note{font-size:13px;color:var(--dim);max-width:34ch}
 
 .badge{
@@ -634,55 +644,6 @@ img{max-width:100%;display:block}
   display:flex;align-items:center;gap:14px;
 }
 .section-h::after{content:"";flex:1;height:1px;background:var(--rule)}
-
-/* шкала критерия */
-.crit{margin-bottom:30px;max-width:720px}
-.crit-head{display:flex;align-items:baseline;gap:12px;margin-bottom:6px;flex-wrap:wrap}
-.crit-label{font-size:14px;color:var(--ink);letter-spacing:.01em}
-.crit-avg{font-family:var(--serif);font-size:17px;color:var(--gold)}
-.crit-avg small{color:var(--faint);font-size:12px}
-.crit-scale{
-  position:relative;
-  height:calc(34px + var(--stack,1) * 22px);
-  margin-right:16px;
-}
-.crit-track{
-  position:absolute;left:0;right:0;bottom:16px;height:1px;
-  background:linear-gradient(90deg,var(--rule),var(--ghost));
-}
-.crit-track::before,.crit-track::after{
-  content:"";position:absolute;bottom:-3px;width:1px;height:7px;background:var(--rule);
-}
-.crit-track::before{left:0}
-.crit-track::after{right:0}
-.crit-avgline{
-  position:absolute;bottom:12px;width:1px;height:9px;
-  background:var(--gold-dim);transform:translateX(-50%);
-}
-.dot{
-  position:absolute;bottom:5px;
-  width:23px;height:23px;border-radius:50%;
-  display:flex;align-items:center;justify-content:center;
-  font-size:10px;font-weight:500;letter-spacing:.02em;
-  color:var(--ink);background:var(--c,#ccc);
-  transform:translateX(-50%) translateY(var(--lift,0));
-  cursor:default;
-  transition:transform .25s var(--ease),box-shadow .25s var(--ease);
-  box-shadow:0 3px 10px rgba(58,32,20,.22);
-}
-.dot:hover{transform:translateX(-50%) translateY(var(--lift,0)) scale(1.18);z-index:5}
-.dot::after{
-  content:attr(data-v);
-  position:absolute;top:-17px;left:50%;transform:translateX(-50%);
-  font-size:10px;color:var(--dim);opacity:0;transition:opacity .2s var(--ease);
-  pointer-events:none;
-}
-.dot:hover::after{opacity:1}
-.crit-ends{
-  position:absolute;left:0;right:0;bottom:-4px;
-  display:flex;justify-content:space-between;
-  font-size:10px;color:var(--faint);letter-spacing:.08em;
-}
 
 /* впечатления */
 .imp{
@@ -880,7 +841,6 @@ img{max-width:100%;display:block}
 
 /* ── подвал ───────────────────────────────────────────────────────────── */
 .site-foot{
-  border-top:1px solid var(--rule);
   padding:clamp(14px,2.4vh,26px) var(--pad) clamp(18px,3.4vh,44px);text-align:center;
   color:var(--faint);font-size:12px;letter-spacing:.05em;
 }
@@ -1219,6 +1179,7 @@ input[type="number"]{-moz-appearance:textfield}
   display:flex;align-items:flex-start;justify-content:space-between;
   gap:18px;flex-wrap:wrap;
 }
+.bp-head > div{flex:1 1 240px;min-width:0}
 .bp-edit{flex:0 0 auto;margin-top:6px;white-space:nowrap}
 
 /* панель действий редактора — липкая, чтобы «Сохранить» не убегало вниз */
@@ -1321,9 +1282,114 @@ input[type="number"]{-moz-appearance:textfield}
 .rr-who .who-dot{margin-right:-7px;border:2px solid var(--void)}
 .rr-names{font-size:14px;color:var(--dim)}
 
-/* ── средний балл в шапке карточки ────────────────────────────────────── */
-.bp-avg-label{
-  font-size:11px;letter-spacing:.14em;text-transform:uppercase;
-  color:var(--faint);line-height:1.5;
+
+/* ══════════════════════════════════════════════════════════════════════════
+   Виджеты на карточке книги
+   ══════════════════════════════════════════════════════════════════════════ */
+
+.bp-widgets{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(224px,1fr));
+  gap:clamp(12px,1.6vw,20px);
 }
-.bp-avg-label small{font-size:10px;letter-spacing:.08em;text-transform:none;opacity:.8}
+.wg{
+  display:flex;flex-direction:column;align-items:center;
+  padding:20px 18px 22px;
+  border:1px solid var(--rule);border-radius:20px;
+  background:var(--void-2);
+  box-shadow:0 8px 22px rgba(var(--shadow),.05);
+}
+.wg-label{
+  align-self:flex-start;
+  font-size:11px;letter-spacing:.15em;text-transform:uppercase;color:var(--faint);
+  margin-bottom:10px;
+}
+
+/* полукруглая шкала среднего балла */
+.gauge{width:100%;max-width:210px;height:auto;display:block}
+.gauge-value{margin-top:-34px;text-align:center}
+.gauge-value b{
+  display:block;
+  font-family:var(--serif);font-weight:400;
+  font-size:clamp(34px,4.4vw,46px);line-height:1;color:var(--gold);
+}
+.gauge-value span{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--faint)}
+
+/* радар по критериям */
+.radar{width:100%;max-width:230px;height:auto;display:block}
+.wg-legend{
+  display:flex;flex-wrap:wrap;justify-content:center;gap:4px 12px;
+  margin-top:8px;
+}
+.lg{
+  display:inline-flex;align-items:center;gap:5px;
+  font-size:11px;color:var(--faint);
+}
+.lg::before{
+  content:"";width:9px;height:2px;border-radius:2px;background:var(--c,var(--ghost));
+}
+.lg-club{color:var(--dim)}
+.lg-club::before{height:3px;background:var(--gold)}
+
+/* кольцо «Перечитаешь?» */
+:root{--rr-yes:#4f8f66;--rr-no:#c07a68}
+.ring-wrap{position:relative;width:100%;max-width:126px}
+.ring{width:100%;height:auto;display:block}
+.ring-value{
+  position:absolute;inset:0;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  line-height:1;
+}
+.ring-value b{font-family:var(--serif);font-weight:400;font-size:30px;color:var(--ink)}
+.ring-value span{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--faint);margin-top:4px}
+.rr-rows{width:100%;margin-top:14px;display:flex;flex-direction:column;gap:6px}
+.rr-row{display:flex;align-items:baseline;gap:9px;font-size:12px;color:var(--dim)}
+.rr-key{
+  flex:0 0 auto;
+  font-size:10px;letter-spacing:.14em;text-transform:uppercase;
+  padding:2px 9px;border-radius:999px;
+}
+.rr-row.rr-yes .rr-key{color:var(--rr-yes);border:1px solid rgba(79,143,102,.45)}
+.rr-row.rr-no  .rr-key{color:var(--rr-no); border:1px solid rgba(192,122,104,.45)}
+
+/* карточки участников: средний балл и пять мини-шкал */
+.mcards{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(226px,1fr));
+  gap:clamp(12px,1.6vw,20px);
+  margin-top:clamp(12px,1.6vw,20px);
+}
+.mcard{
+  padding:16px 18px 18px;
+  border:1px solid var(--rule);border-radius:20px;
+  background:var(--raise);
+}
+.mcard-head{display:flex;align-items:center;gap:9px;margin-bottom:10px}
+.mcard-name{font-family:var(--serif);font-size:20px;line-height:1;flex:1;min-width:0}
+.mcard-mean{
+  font-family:var(--serif);font-size:24px;line-height:1;color:var(--gold);
+  font-variant-numeric:tabular-nums;
+}
+.mcard-rr{
+  display:inline-block;margin-bottom:12px;
+  font-size:10px;letter-spacing:.12em;text-transform:uppercase;
+  padding:2px 9px;border-radius:999px;
+}
+.mcard-rr.yes{color:var(--rr-yes);border:1px solid rgba(79,143,102,.4)}
+.mcard-rr.no {color:var(--rr-no); border:1px solid rgba(192,122,104,.4)}
+.mcard-bars{display:flex;flex-direction:column;gap:7px}
+.mb-row{display:grid;grid-template-columns:74px 1fr 18px;align-items:center;gap:9px}
+.mb-name{font-size:11px;color:var(--faint);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mb-track{height:5px;border-radius:3px;background:var(--rule);overflow:hidden}
+.mb-fill{
+  display:block;height:100%;border-radius:3px;
+  background:linear-gradient(90deg,var(--peach),var(--c,var(--gold)));
+}
+.mb-val{
+  font-size:11px;color:var(--dim);text-align:right;
+  font-variant-numeric:tabular-nums;
+}
+
+@media (max-width:520px){
+  .mb-row{grid-template-columns:62px 1fr 18px}
+}

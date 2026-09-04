@@ -50,8 +50,7 @@ function renderHead() {
   document.getElementById('heroLedger').textContent =
     `${nPlural(books.length, 'книга', 'книги', 'книг')} · ` +
     `${nPlural(genres().length, 'жанр', 'жанра', 'жанров')} · с ${club.since} года`;
-  document.getElementById('footNote').textContent =
-    `${club.name} · ${club.cadenceLabel}`;
+  document.getElementById('footNote').textContent = club.name;
 
   const now = club.currentlyReading;
   const box = document.getElementById('now');
@@ -267,6 +266,55 @@ export function refitShelf() {
   fitFrontRow(front, lastFrontCount);
 }
 
+/* Полосу жанров можно листать тремя способами: колесом мыши (её обычная
+   вертикальная прокрутка переводится в горизонтальную), перетаскиванием
+   курсором и, как и раньше, тачем. Клик по чипу при этом не должен
+   срабатывать после протаскивания — отсюда порог в несколько пикселей. */
+function wireGenreDrag(box) {
+  box.addEventListener('wheel', e => {
+    // Тачпады шлют и deltaX — им ничего переводить не нужно.
+    if (Math.abs(e.deltaY) <= Math.abs(e.deltaX)) return;
+    const max = box.scrollWidth - box.clientWidth;
+    if (max <= 0) return;
+    box.scrollLeft += e.deltaY;
+    e.preventDefault();
+  }, { passive: false });
+
+  let startX = 0, startScroll = 0, dragging = false, moved = 0;
+
+  box.addEventListener('pointerdown', e => {
+    if (e.pointerType === 'touch' || e.button !== 0) return;  // тач листает сам
+    dragging = true; moved = 0;
+    startX = e.clientX;
+    startScroll = box.scrollLeft;
+    box.setPointerCapture(e.pointerId);
+  });
+
+  box.addEventListener('pointermove', e => {
+    if (!dragging) return;
+    const dx = e.clientX - startX;
+    if (!box.classList.contains('dragging') && Math.abs(dx) > 4) {
+      box.classList.add('dragging');   // с этого момента это уже не клик
+    }
+    moved = Math.max(moved, Math.abs(dx));
+    box.scrollLeft = startScroll - dx;
+  });
+
+  const end = e => {
+    if (!dragging) return;
+    dragging = false;
+    box.classList.remove('dragging');
+    if (e.pointerId != null && box.hasPointerCapture?.(e.pointerId)) {
+      box.releasePointerCapture(e.pointerId);
+    }
+  };
+  box.addEventListener('pointerup', end);
+  box.addEventListener('pointercancel', end);
+
+  // Протащили — значит, чип не нажимали.
+  box.addEventListener('click', e => { if (moved > 4) { e.stopPropagation(); moved = 0; } }, true);
+}
+
 export function renderShelf() {
   const shelf = document.getElementById('shelf');
   const empty = document.getElementById('shelfEmpty');
@@ -360,8 +408,9 @@ export function initShelf(openBook) {
     renderShelf();
   });
 
-  document.getElementById('genres')
-    .addEventListener('scroll', () => syncGenreFade(), { passive: true });
+  const genresBox = document.getElementById('genres');
+  genresBox.addEventListener('scroll', () => syncGenreFade(), { passive: true });
+  wireGenreDrag(genresBox);
 
   let resizeT;
   window.addEventListener('resize', () => {
