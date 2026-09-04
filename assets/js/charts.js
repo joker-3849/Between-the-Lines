@@ -6,7 +6,7 @@
  * незачем. Цвета берутся из тех же переменных, что и остальной интерфейс,
  * поэтому смена палитры не требует правок здесь. */
 
-import { state, avg, memberScore, rereadTally, num } from './data.js';
+import { state, avg, spread, verdict, scoresFor, memberScore, rereadTally, num, numPlural } from './data.js';
 import { esc } from './ui.js';
 
 const scale = () => state.club.scale || 10;
@@ -16,6 +16,20 @@ const scale = () => state.club.scale || 10;
 export function gaugeHTML(book) {
   const mean = avg(book);
   const max = scale();
+  const v = verdict(book);
+  const scores = scoresFor(book);
+  const sp = spread(book);
+
+  // Подпись под шкалой объясняет, чем именно клуб сошёлся или разошёлся —
+  // раньше эта фраза висела отдельной строкой под автором.
+  const gap = numPlural(sp, 'балл', 'балла', 'баллов');
+  const note = !scores.length ? ''
+    : scores.length === 1
+      ? `Оценил${scores[0].member.g === 'm' ? '' : 'а'} пока только ${scores[0].member.name}.`
+      : sp < 0.05 ? 'Все сошлись на одной оценке.'
+      : v?.kind === 'unison' ? `Оценки почти совпали: разброс ${gap}.`
+      : v?.kind === 'split' ? `Мнения разошлись на ${gap} из ${max}.`
+      : `Средние баллы разошлись на ${gap}.`;
   const R = 76, CX = 100, CY = 96, SW = 13;
   const len = Math.PI * R;
   const frac = mean == null ? 0 : Math.max(0, Math.min(1, mean / max));
@@ -50,6 +64,8 @@ export function gaugeHTML(book) {
     <div class="gauge-value">
       <b>${mean == null ? '—' : num(mean)}</b><span>из ${max}</span>
     </div>
+    ${v ? `<span class="badge ${v.kind} gauge-badge">${esc(v.label)}</span>` : ''}
+    ${note ? `<p class="gauge-note">${esc(note)}</p>` : ''}
     </div>
   </div>`;
 }

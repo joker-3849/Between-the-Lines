@@ -1,7 +1,7 @@
 /* Страница книги: мнения сгруппированы по критериям, а не по участникам.
    Открывается плавным перелётом обложки с полки (FLIP). */
 
-import { state, spread, verdict, scoresFor, fmtDate, nPlural, numPlural, num } from './data.js';
+import { state, scoresFor, fmtDate, nPlural } from './data.js';
 import { coverHTML, mountCovers, whoHTML, esc, stagger } from './ui.js';
 import { gaugeHTML, radarHTML, rereadRingHTML, rankHTML, memberCardsHTML } from './charts.js';
 import { hydrateIcons } from './icons.js';
@@ -50,33 +50,6 @@ function draftBannerHTML(book) {
   </div>`;
 }
 
-function verdictHTML(book) {
-  const scores = scoresFor(book);
-
-  if (!scores.length) {
-    return `<div class="bp-verdict">
-      <span class="bp-avg bp-avg-empty">—</span>
-      <span class="bp-verdict-note">Оценок пока нет — нажмите «Внести изменения» и заполните.</span>
-    </div>`;
-  }
-
-  const sp = spread(book);
-  const v = verdict(book);
-  const note = scores.length < 1
-    ? ''
-    : scores.length === 1
-      ? `Оценил${scores[0].member.g === 'm' ? '' : 'а'} пока только ${scores[0].member.name}.`
-      : sp < 0.05
-        ? 'Все сошлись на одной оценке — такое случается редко.'
-        : `Средние баллы участников разошлись на `
-          + `${numPlural(sp, 'балл', 'балла', 'баллов')} из ${state.club.scale}.`;
-
-  return `<div class="bp-verdict">
-    ${v ? `<span class="badge ${v.kind}">${esc(v.label)}</span>` : ''}
-    <span class="bp-verdict-note">${esc(note)}</span>
-  </div>`;
-}
-
 function impressionsHTML(book) {
   const items = state.members
     .map(m => ({ m, text: book.reviews?.[m.id]?.text }))
@@ -113,18 +86,16 @@ function render(book) {
       ${factsHTML(book)}
     </div>
     <div class="bp-right">
-      <div class="bp-head">
-        <div>
-          <h1 class="bp-title">${esc(book.title)}</h1>
-          <p class="bp-author">${esc(book.author)}</p>
-        </div>
+      <h1 class="bp-title">${esc(book.title)}</h1>
+      <p class="bp-author">${esc(book.author)}</p>
+
+      <div class="section-head">
+        <h2 class="section-h">Оценки клуба</h2>
         <button type="button" class="btn btn-ghost bp-edit" id="editBook">
           <span class="ic" data-icon="pencil"></span> Внести изменения
         </button>
       </div>
-      ${verdictHTML(book)}
       ${scoresFor(book).length ? `
-        <h2 class="section-h">Оценки клуба</h2>
         <div class="bp-widgets">
           ${gaugeHTML(book)}
           ${radarHTML(book)}
@@ -132,7 +103,7 @@ function render(book) {
           ${rankHTML(book)}
         </div>
         ${memberCardsHTML(book)}
-      ` : '<p class="bp-verdict-note">Пока никто не оценил.</p>'}
+      ` : '<p class="bp-verdict-note">Оценок пока нет — нажмите «Внести изменения» и заполните.</p>'}
       ${impressionsHTML(book)}
       ${takenHTML(book)}
     </div>
