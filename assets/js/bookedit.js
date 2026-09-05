@@ -8,7 +8,7 @@
  * под ним ряд кружков. Средний балл нигде не вводится — он пересчитывается
  * на лету из выставленных критериев. */
 
-import { state, memberScore, num, dropBook } from './data.js';
+import { state, memberScore, num, dropBook, markDirty } from './data.js';
 import { coverHTML, avatarHTML, esc,
          scorePickerHTML, rereadPickerHTML, wirePickers, readPicked, pickedMean } from './ui.js';
 import { icon, hydrateIcons } from './icons.js';
@@ -234,6 +234,7 @@ function save(form) {
     reviews: collectReviews(form)
   });
   if (!book._draft) book._edited = true;
+  markDirty('books');
 
   finish(true);
 }

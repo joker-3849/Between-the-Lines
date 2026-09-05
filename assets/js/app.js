@@ -1,12 +1,13 @@
 /* Точка входа: загрузка данных, переключение разделов, состояние шапки. */
 
-import { loadData } from './data.js';
+import { loadData, onDirtyChange } from './data.js';
 import { hydrateIcons } from './icons.js';
 import { initShelf, refreshShelf } from './shelf.js';
 import { initBook, showBook, closeBook, currentBookId } from './book.js';
 import { initPages, renderLines, renderChronicle, renderYear } from './pages.js';
 import { initAddBook } from './addbook.js';
 import { isEditing, confirmLeaveEditor } from './bookedit.js';
+import { initSaveBar, syncSaveBar } from './savebar.js';
 
 const RENDERERS = {
   lines: renderLines,
@@ -87,6 +88,9 @@ function fail(message) {
       openBook(book.id);
     }
   });
+
+  initSaveBar();
+  onDirtyChange(syncSaveBar);
 
   document.getElementById('mainnav').addEventListener('click', e => {
     const b = e.target.closest('[data-view]');

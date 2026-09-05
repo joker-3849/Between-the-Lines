@@ -28,6 +28,31 @@ export async function loadData() {
   return state;
 }
 
+/* ── что разошлось с файлами ─────────────────────────────────────────────
+   Правки живут в памяти вкладки, пока их не закоммитили. Список изменённых
+   файлов нужен и панели «Сохранить на сайт», и подсказке о том, что видит
+   пока только этот браузер. */
+
+const dirty = new Set();
+const dirtyWatchers = new Set();
+
+/** Пометить файл изменённым: 'books' или 'club'. */
+export function markDirty(file) {
+  dirty.add(file);
+  dirtyWatchers.forEach(fn => fn());
+}
+
+/** Изменённые файлы — пустой массив, если всё совпадает с репозиторием. */
+export function dirtyFiles() { return [...dirty]; }
+
+/** Забыть о расхождении — после успешного коммита. */
+export function clearDirty() {
+  dirty.clear();
+  dirtyWatchers.forEach(fn => fn());
+}
+
+export function onDirtyChange(fn) { dirtyWatchers.add(fn); }
+
 /* ── добавление новой книги ──────────────────────────────────────────────
    Сайт читает данные из JSON в репозитории, поэтому «Добавить книгу» не
    пишет ни в какой файл сама — она собирает книгу в оперативной памяти,
@@ -61,6 +86,7 @@ export function dropBook(id) {
   const i = state.books.findIndex(b => b.id === id);
   if (i >= 0) state.books.splice(i, 1);
   state.bookById.delete(id);
+  markDirty('books');
 }
 
 /** Добавляет книгу в текущее состояние страницы (не в файл) и возвращает её. */
@@ -68,6 +94,7 @@ export function addDraftBook(book) {
   const draft = { ...book, _draft: true };
   state.books.push(draft);
   state.bookById.set(draft.id, draft);
+  markDirty('books');
   return draft;
 }
 

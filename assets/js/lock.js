@@ -10,11 +10,21 @@
  * Фраза не хранится: в club.json лежит SHA-256 от неё в нижнем регистре и
  * без крайних пробелов. Нет поля editPass — замка нет вовсе. */
 
-import { state } from './data.js';
+import { state, markDirty } from './data.js';
+import { esc } from './ui.js';
+import { canPublish, decryptToken, encryptToken } from './publish.js';
 import { openModal, closeModal } from './modal.js';
 import { icon, hydrateIcons } from './icons.js';
 
 const KEY = 'btl.unlocked';
+
+/* Сама фраза живёт только в памяти вкладки и только пока вкладка открыта:
+   в localStorage лежит её хеш, по которому фразу не восстановить. Нужна она
+   для сохранения на сайт — там из неё выводится ключ к токену. */
+let phrase = null;
+
+/** Фраза, если её вводили в этой вкладке. */
+export function currentPhrase() { return phrase; }
 
 async function sha256(text) {
   // crypto.subtle есть только в защищённом контексте: https или localhost.
@@ -43,15 +53,19 @@ export function unlocked() {
 
 /** Забыть фразу — полка снова спросит её при следующей правке. */
 export function forget() {
+  phrase = null;
   try { localStorage.removeItem(KEY); } catch { /* приватный режим */ }
 }
 
 /**
  * Пускает к правке: если замок открыт — сразу, иначе спрашивает фразу.
  * Возвращает промис, который разрешается true только при успехе.
+ *
+ * needPhrase — нужна не только открытая щеколда, но и сама фраза: замок
+ * мог остаться открытым с прошлого раза, а в памяти вкладки её уже нет.
  */
-export function requireUnlock() {
-  if (unlocked()) return Promise.resolve(true);
+export function requireUnlock({ needPhrase = false } = {}) {
+  if (unlocked() && (!needPhrase || phrase)) return Promise.resolve(true);
 
   return new Promise(resolve => {
     const body = openModal('Правка полки', `
@@ -99,6 +113,7 @@ export function requireUnlock() {
         input.select();
         return;
       }
+      phrase = input.value;
       latch(passHash());
       closeModal();
       finish(true);
@@ -154,7 +169,10 @@ export function openLockSettings() {
         ${unlocked() ? `<button type="button" class="link" id="passForget">Забыть фразу на этом устройстве</button>` : ''}
       </div>
     </form>
+    ${publishSectionHTML()}
   `, 'modal-lock');
+
+  wirePublishSection(body);
 
   const oldInput = body.querySelector('#passOld');
   const a = body.querySelector('#passNew');
@@ -184,9 +202,23 @@ export function openLockSettings() {
     if (oldHash !== passHash()) { oldInput.select(); return fail('Текущая фраза не подходит.'); }
     if (newHash === passHash()) return fail('Новая фраза совпадает с текущей.');
 
+    // Токен сохранения зашифрован старой фразой: не перешифруешь — новая
+    // фраза откроет замок, но сохранять на сайт перестанет.
+    if (canPublish()) {
+      try {
+        const token = await decryptToken(oldInput.value);
+        const { repo, branch } = state.club.publish;
+        state.club.publish = await encryptToken(next, token, repo, branch);
+      } catch {
+        return fail('Не вышло перешифровать токен сохранения — фраза сменена не была.');
+      }
+    }
+
     // В этой вкладке фраза уже новая; в репозитории — только после коммита.
     state.club.editPass = newHash;
+    phrase = next;
     latch(newHash);
+    markDirty('club');
     showPassJSON(newHash);
   });
 
@@ -212,6 +244,135 @@ function showPassJSON(hash) {
   const ta = body.querySelector('#passJson');
   const copy = body.querySelector('#passCopy');
   body.querySelector('#passDone').addEventListener('click', closeModal);
+  copy.addEventListener('click', async () => {
+    try {
+      await navigator.clipboard.writeText(ta.value);
+      copy.innerHTML = `${icon('check')} Скопировано`;
+    } catch {
+      ta.focus(); ta.select();
+      copy.textContent = 'Не вышло — выделено, скопируйте вручную';
+    }
+    hydrateIcons(copy);
+  });
+}
+
+/* ── сохранение на сайт ───────────────────────────────────────────────── */
+
+/* Включить сохранение — значит положить в club.json токен GitHub,
+   зашифрованный фразой. Делается это здесь, в браузере: токен не уходит
+   никуда, кроме api.github.com, и в открытом виде нигде не оседает. */
+
+function publishSectionHTML() {
+  const on = canPublish();
+  return `<div class="pass-publish">
+    <h3>Сохранение на сайт</h3>
+    ${on
+      ? `<p class="field-hint">Включено: репозиторий
+           <code>${esc(state.club.publish.repo)}</code>. Кнопка «Сохранить на сайт»
+           появляется внизу, как только что-то поменяли.</p>
+         <p class="field-hint">Токен зашифрован текущей фразой — при смене фразы он
+           перешифровывается сам. Чтобы заменить токен, вставьте новый ниже.</p>`
+      : `<p class="field-hint">Пока выключено: правки живут в памяти вкладки, и в
+           репозиторий их переносят вручную. Включите — и тот, кто знает фразу,
+           сможет сохранять сам.</p>
+         <p class="field-hint"><b>Фраза станет настоящим паролем.</b> Зашифрованный
+           токен лежит в открытом репозитории, подобрать короткую фразу к нему можно
+           офлайн — сначала смените её на длинную и случайную, слов из пяти.</p>`}
+    <form id="pubForm" novalidate>
+      <div class="field">
+        <label for="pubRepo">Репозиторий</label>
+        <input id="pubRepo" placeholder="владелец/репозиторий" autocomplete="off"
+          spellcheck="false" value="${esc(state.club.publish?.repo || guessRepo())}">
+      </div>
+      <div class="field">
+        <label for="pubBranch">Ветка (пусто — ветка по умолчанию)</label>
+        <input id="pubBranch" placeholder="main" autocomplete="off" spellcheck="false"
+          value="${esc(state.club.publish?.branch || '')}">
+      </div>
+      <div class="field">
+        <label for="pubToken">Токен GitHub</label>
+        <input id="pubToken" type="password" autocomplete="off" spellcheck="false"
+          placeholder="github_pat_…">
+        <p class="field-hint">Fine-grained token только на этот репозиторий, право
+          Contents: Read and write. Он шифруется здесь же и в открытом виде никуда
+          не записывается.</p>
+      </div>
+      <p class="field-hint" id="pubError" hidden></p>
+      <div class="modal-actions">
+        <button type="submit" class="btn btn-ghost">${icon('lock')} ${on ? 'Заменить токен' : 'Включить сохранение'}</button>
+        ${on ? `<button type="button" class="link" id="pubOff">Выключить сохранение</button>` : ''}
+      </div>
+    </form>
+  </div>`;
+}
+
+/** Владелец и репозиторий из адреса GitHub Pages, если сайт открыт оттуда. */
+function guessRepo() {
+  const m = /^([\w-]+)\.github\.io$/.exec(location.hostname);
+  const path = location.pathname.split('/').filter(Boolean)[0];
+  return m && path ? `${m[1]}/${path}` : '';
+}
+
+function wirePublishSection(body) {
+  const form = body.querySelector('#pubForm');
+  if (!form) return;
+  const error = body.querySelector('#pubError');
+  const fail = text => { error.textContent = text; error.hidden = false; };
+
+  body.querySelector('#pubOff')?.addEventListener('click', () => {
+    if (!window.confirm('Выключить сохранение с сайта? Токен будет убран из club.json.')) return;
+    delete state.club.publish;
+    markDirty('club');
+    closeModal();
+  });
+
+  form.addEventListener('submit', async e => {
+    e.preventDefault();
+    error.hidden = true;
+
+    const repo = body.querySelector('#pubRepo').value.trim();
+    const token = body.querySelector('#pubToken').value.trim();
+    const branch = body.querySelector('#pubBranch').value.trim();
+    const pass = body.querySelector('#passOld').value;
+
+    if (!/^[\w.-]+\/[\w.-]+$/.test(repo)) return fail('Репозиторий пишется как «владелец/имя».');
+    if (!token) return fail('Вставьте токен.');
+    if (!globalThis.crypto?.subtle) {
+      return fail('Зашифровать токен можно только по https или на localhost.');
+    }
+
+    const hash = await sha256(pass);
+    if (hash !== passHash()) {
+      body.querySelector('#passOld').focus();
+      return fail('Сначала введите текущую фразу в поле выше — ею и шифруется токен.');
+    }
+
+    state.club.publish = await encryptToken(pass, token, repo, branch);
+    phrase = pass;                 // сохранять можно сразу, не спрашивая заново
+    markDirty('club');
+    showPublishOn();
+  });
+}
+
+function showPublishOn() {
+  const body = openModal('Сохранение включено', `
+    <p class="field-hint">Токен зашифрован фразой клуба. Осталось положить его в
+      репозиторий: нажмите «Сохранить на сайт» внизу страницы — сохранение уже
+      работает в этой вкладке и закоммитит само себя.</p>
+    <textarea class="export-json" id="pubJson" readonly spellcheck="false"
+      style="min-height:150px">${esc(JSON.stringify({ publish: state.club.publish }, null, 2))}</textarea>
+    <p class="field-hint">Если сохранить не выйдет — например, токен окажется без
+      прав, — скопируйте этот блок в <code>data/club.json</code> рядом с
+      <code>editPass</code> и закоммитьте вручную.</p>
+    <div class="modal-actions">
+      <button type="button" class="btn btn-primary" id="pubCopy">${icon('copy')} Скопировать</button>
+      <button type="button" class="btn btn-ghost" id="pubDone">Готово</button>
+    </div>
+  `, 'modal-lock');
+
+  const ta = body.querySelector('#pubJson');
+  const copy = body.querySelector('#pubCopy');
+  body.querySelector('#pubDone').addEventListener('click', closeModal);
   copy.addEventListener('click', async () => {
     try {
       await navigator.clipboard.writeText(ta.value);
