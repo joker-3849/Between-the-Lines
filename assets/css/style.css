@@ -315,9 +315,13 @@ img{max-width:100%;display:block}
   flex:1 1 auto;
   display:flex;flex-direction:column;justify-content:center;
 }
+/* Тёплая подсветка за полкой. Центр эллипса стоял ровно на нижнем крае
+   своего бокса, где подсветка сильнее всего, — получалась жёсткая
+   горизонталь под самой планкой, и она читалась как обрезанная тень.
+   Теперь эллипс целиком помещается в бокс и гаснет со всех сторон. */
 .shelf-wrap::before{
-  content:"";position:absolute;left:0;right:0;bottom:64px;height:210px;
-  background:radial-gradient(ellipse 52% 100% at 50% 100%,rgba(101,14,20,.10),transparent 72%);
+  content:"";position:absolute;left:0;right:0;bottom:-40px;height:340px;
+  background:radial-gradient(ellipse 52% 50% at 50% 62%,rgba(101,14,20,.10),transparent 72%);
   pointer-events:none;
 }
 .shelf{
@@ -346,16 +350,16 @@ img{max-width:100%;display:block}
 /* Тень идёт во всю ширину страницы и гаснет только у самых краёв — раньше
    она обрывалась по ширине полки, и обрыв был виден. Основную работу по
    объёму всё равно делает контактная тень каждой книги (.slot::after).
-   Градиент начинается прозрачным и набирает силу ниже линии: если начать
-   его сразу под ней в полную силу, линия читается как срез тени. */
+   Тень лежит под линией и начинается прозрачной, набирая силу ниже: если
+   начать её сразу под линией в полную силу, линия читается как срез. */
 .shelf-plank::after{
-  content:"";position:absolute;left:0;right:0;top:-8px;height:62px;
+  content:"";position:absolute;left:0;right:0;top:1px;height:58px;
   background:linear-gradient(to bottom,
     transparent 0,
-    rgba(58,32,20,.13) 22%,
-    rgba(58,32,20,.045) 55%,
+    rgba(58,32,20,.14) 26%,
+    rgba(58,32,20,.05) 58%,
     transparent 100%);
-  filter:blur(10px);
+  filter:blur(8px);
   -webkit-mask-image:linear-gradient(90deg,transparent,#000 12%,#000 88%,transparent);
   mask-image:linear-gradient(90deg,transparent,#000 12%,#000 88%,transparent);
 }
@@ -1587,15 +1591,16 @@ input[type="number"]{-moz-appearance:textfield}
   position:relative;z-index:3;
 }
 .bc-shelf{position:relative}
-/* Книги стоят на планке, поэтому ряд выровнен по низу, а перспектива нужна
-   для наклона корешка «на себя» при наведении. */
+/* Книги стоят на планке, поэтому ряд выровнен по низу. Перспективы на ряде
+   нет нарочно: общая точка схода стоит в его середине, и книги по краям
+   при наклоне заваливались вбок вместо того, чтобы наклоняться на зрителя.
+   Перспектива задана каждой книге отдельно, прямо в transform. */
 .bc-row{
   display:flex;align-items:flex-end;gap:3px;
   /* Высота полки — по самой высокой книге на ней: ряд из одних лежащих
      книг не должен тащить за собой пустую полосу в человеческий рост. */
   min-height:90px;
   padding:30px 6px 0;
-  perspective:1200px;
 }
 .bc-plank{
   position:relative;height:2px;
@@ -1606,13 +1611,13 @@ input[type="number"]{-moz-appearance:textfield}
    Маска гасит её по бокам, а градиент начинается прозрачным — иначе у тени
    видны все четыре края бокса и она выглядит наклеенным прямоугольником. */
 .bc-plank::after{
-  content:"";position:absolute;left:0;right:0;top:-4px;height:52px;
+  content:"";position:absolute;left:0;right:0;top:2px;height:48px;
   background:linear-gradient(180deg,
     transparent 0,
-    rgba(58,32,20,.15) 20%,
-    rgba(58,32,20,.05) 56%,
+    rgba(58,32,20,.16) 26%,
+    rgba(58,32,20,.05) 60%,
     transparent 100%);
-  filter:blur(8px);
+  filter:blur(6px);
   -webkit-mask-image:linear-gradient(90deg,transparent,#000 9%,#000 84%,transparent);
   mask-image:linear-gradient(90deg,transparent,#000 9%,#000 84%,transparent);
 }
@@ -1624,11 +1629,11 @@ input[type="number"]{-moz-appearance:textfield}
   height:170px;
   background:linear-gradient(180deg,
     transparent 0,
-    rgba(58,32,20,.19) 7%,
-    rgba(58,32,20,.07) 32%,
+    rgba(58,32,20,.19) 9%,
+    rgba(58,32,20,.07) 33%,
     rgba(58,32,20,.02) 64%,
     transparent 100%);
-  filter:blur(11px);
+  filter:blur(9px);
 }
 
 /* ── корешок ──────────────────────────────────────────────────────────── */
@@ -1643,9 +1648,10 @@ input[type="number"]{-moz-appearance:textfield}
   color:var(--fg);
   display:flex;flex-direction:column;align-items:center;justify-content:center;
   gap:6px;padding:12px 0;
-  /* Привалившаяся книга поворачивается вокруг нижнего правого угла — он и
-     остаётся на планке, как у настоящей книги, съехавшей в пустое место. */
-  transform-origin:100% 100%;
+  /* Точка вращения — середина нижнего края: она и остаётся на планке при
+     наклоне, и служит точкой схода для собственной перспективы книги,
+     поэтому корешок наклоняется ровно на зрителя, где бы книга ни стояла. */
+  transform-origin:50% 100%;
   transform:rotate(var(--lean,0deg));
   transition:transform .32s var(--ease),box-shadow .32s var(--ease),filter .32s var(--ease);
   box-shadow:0 6px 14px -6px rgba(var(--shadow),.5);
@@ -1657,7 +1663,7 @@ input[type="number"]{-moz-appearance:textfield}
    Знак у rotateX отрицательный: ось Y в CSS смотрит вниз, поэтому
    положительный угол уводил бы верх корешка от зрителя, внутрь полки. */
 .bc-book:hover,.bc-book:focus-visible{
-  transform:rotate(var(--lean,0deg)) rotateX(-20deg);
+  transform:perspective(1000px) rotate(var(--lean,0deg)) rotateX(-20deg);
   box-shadow:0 16px 26px -10px rgba(var(--shadow),.55);
   filter:brightness(1.07);
   z-index:3;
@@ -1673,8 +1679,8 @@ input[type="number"]{-moz-appearance:textfield}
   background:var(--acc);opacity:.6;
 }
 .bc-band-low{opacity:.35}
-/* Наклонной книге нужно место справа, куда она валится. */
-.bc-lean{margin-right:16px}
+/* Привалившаяся книга разъезжается в обе стороны от нижней середины. */
+.bc-lean{margin:0 9px}
 
 /* ── книга лицом ──────────────────────────────────────────────────────── */
 .bc-face{

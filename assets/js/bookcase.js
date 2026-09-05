@@ -119,7 +119,7 @@ function layout(books, available) {
   const widthOf = item => item.kind === 'stack'
     ? Math.max(...item.books.map(flatWidth)) + 22
     : (item.pose === 'face' ? Math.round(SHELF_H * 0.9 / 1.5) : spineWidth(item.book))
-      + (item.pose === 'lean' ? 18 : 3);
+      + (item.pose === 'lean' ? 21 : 3);
 
   // Одинокая лежащая книга оставляет над собой дыру в человеческий рост,
   // поэтому «лечь» — решение не одной книги, а группы: выпала поза «flat» —
