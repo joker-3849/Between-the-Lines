@@ -217,7 +217,7 @@ img{max-width:100%;display:block}
 }
 /* Первая строка — поиск, сортировка, обложки и «Добавить книгу»; вторая —
    жанры. Раньше жанры делили строку со всем остальным, и места им не хватало. */
-.tb-row{display:flex;align-items:center;gap:clamp(8px,1.4vw,16px);flex-wrap:nowrap;width:100%}
+.tb-row{display:flex;align-items:center;gap:clamp(6px,1.4vw,16px);flex-wrap:nowrap;width:100%}
 .tb-row-main .tb-search{flex:1 1 auto}
 .tb-add{flex:0 0 auto;height:var(--ctl-h);padding:0 18px;white-space:nowrap}
 .tb-search{
@@ -308,6 +308,20 @@ img{max-width:100%;display:block}
 .seg .ic{width:17px;height:17px}
 .seg:hover{color:var(--ink)}
 .seg[aria-pressed="true"]{color:var(--void);background:var(--ink)}
+
+/* Замок — такой же кружок, как переключатель обложек: одна редкая кнопка
+   не должна перетягивать на себя строку с поиском и «Добавить книгу». */
+.tb-lock{
+  flex:0 0 auto;
+  display:inline-flex;align-items:center;justify-content:center;
+  width:var(--ctl-h);height:var(--ctl-h);
+  border:1px solid var(--rule);border-radius:50%;
+  color:var(--faint);
+  transition:color .2s var(--ease),border-color .2s var(--ease);
+}
+.tb-lock:hover{color:var(--ink);border-color:var(--ghost)}
+.tb-lock[hidden]{display:none}
+.tb-lock .ic{width:16px;height:16px}
 
 .covers-hint{
   max-width:var(--maxw);
@@ -866,6 +880,9 @@ img{max-width:100%;display:block}
 
 /* ── подвал ───────────────────────────────────────────────────────────── */
 .site-foot{
+  /* Собственный слой ниже шкафа: тень нижней полки должна ложиться на
+     логотип, а не прятаться под подвалом, который идёт следующим блоком. */
+  position:relative;z-index:0;
   padding:clamp(22px,3.4vh,40px) var(--pad) clamp(18px,3.4vh,44px);text-align:center;
   color:var(--faint);font-size:12px;letter-spacing:.05em;
 }
@@ -1629,17 +1646,22 @@ input[type="number"]{-moz-appearance:textfield}
 }
 /* Тень под планкой отделяет полку от следующей, не рисуя лишней линии. */
 .bc-plank::after{
-  content:"";position:absolute;left:0;right:10%;top:2px;height:26px;
-  background:linear-gradient(180deg,rgba(58,32,20,.16),transparent 80%);
+  content:"";position:absolute;left:0;right:10%;top:2px;height:34px;
+  background:linear-gradient(180deg,rgba(58,32,20,.16),transparent 100%);
   filter:blur(5px);
 }
 /* Нижняя полка стоит над подвалом, поэтому её тень длиннее и ложится прямо
-   на логотип — иначе она обрывалась ровно по нижнему краю шкафа. */
+   на логотип — иначе она обрывалась ровно по нижнему краю шкафа. Градиент
+   гаснет ровно на 100% высоты: если оборвать его раньше, нижняя граница
+   бокса читается как срез. */
 .bc-shelf:last-child .bc-plank::after{
-  right:4%;height:86px;
+  right:2%;height:150px;
   background:linear-gradient(180deg,
-    rgba(58,32,20,.20),rgba(58,32,20,.06) 42%,transparent 92%);
-  filter:blur(7px);
+    rgba(58,32,20,.22),
+    rgba(58,32,20,.08) 30%,
+    rgba(58,32,20,.025) 62%,
+    transparent 100%);
+  filter:blur(9px);
 }
 
 /* ── корешок ──────────────────────────────────────────────────────────── */

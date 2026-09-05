@@ -6,6 +6,7 @@ import { coverHTML, mountCovers, loadedCovers, resetLoadedCovers, esc } from './
 import * as settings from './settings.js';
 import { icon, hydrateIcons } from './icons.js';
 import { openAddBookModal } from './addbook.js';
+import { locked, openLockSettings } from './lock.js';
 import { bookcaseHTML } from './bookcase.js';
 
 const FACE_OUT = 7;          // сколько книг стоят лицом, прежде чем начнётся стопка
@@ -484,6 +485,11 @@ export function initShelf(openBook) {
   });
 
   document.getElementById('addBookBtn').addEventListener('click', openAddBookModal);
+
+  // Кнопки замка нет, когда в club.json нет editPass: менять нечего.
+  const lockBtn = document.getElementById('lockBtn');
+  lockBtn.hidden = !locked();
+  lockBtn.addEventListener('click', openLockSettings);
 
   document.getElementById('coversToggle').addEventListener('click', e => {
     const b = e.target.closest('[data-covers]');
