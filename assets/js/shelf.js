@@ -45,13 +45,21 @@ function visibleBooks() {
 
 /* ── шапка ────────────────────────────────────────────────────────────── */
 
+/** Название клуба логотипом: серединное «the» — курсивом, как в шапке. */
+function wordmarkHTML(name) {
+  const m = /^(.*\S)\s+(the)\s+(\S.*)$/i.exec(name || '');
+  return m
+    ? `${esc(m[1])}<span class="wm-the"> ${esc(m[2])} </span>${esc(m[3])}`
+    : esc(name || '');
+}
+
 function renderHead() {
   const { club, books } = state;
   document.getElementById('heroTagline').textContent = club.tagline;
   document.getElementById('heroLedger').textContent =
     `${nPlural(books.length, 'книга', 'книги', 'книг')} · ` +
     `${nPlural(genres().length, 'жанр', 'жанра', 'жанров')} · с ${club.since} года`;
-  document.getElementById('footNote').textContent = club.name;
+  document.getElementById('footNote').innerHTML = wordmarkHTML(club.name);
 
   const now = club.currentlyReading;
   const box = document.getElementById('now');

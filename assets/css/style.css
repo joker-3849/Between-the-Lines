@@ -866,9 +866,22 @@ img{max-width:100%;display:block}
 
 /* ── подвал ───────────────────────────────────────────────────────────── */
 .site-foot{
-  padding:clamp(14px,2.4vh,26px) var(--pad) clamp(18px,3.4vh,44px);text-align:center;
+  padding:clamp(22px,3.4vh,40px) var(--pad) clamp(18px,3.4vh,44px);text-align:center;
   color:var(--faint);font-size:12px;letter-spacing:.05em;
 }
+/* Логотип не написан на странице, а вдавлен в неё: сам текст — приглушённый,
+   светлый блик снизу и тёмная подсветка сверху дают фаску углубления. */
+.foot-mark{
+  display:inline-block;
+  font-family:var(--serif);
+  font-size:clamp(15px,1.4vw,18px);
+  letter-spacing:.01em;
+  color:rgba(72,44,28,.36);
+  text-shadow:
+    0 1px 0 rgba(255,253,248,.95),
+    0 -1px 1px rgba(58,32,20,.26);
+}
+.foot-mark .wm-the{font-style:italic;color:inherit;opacity:.72}
 
 /* ── FLIP-слой ────────────────────────────────────────────────────────── */
 .flip-layer{position:fixed;inset:0;z-index:150;pointer-events:none}
@@ -1569,9 +1582,12 @@ input[type="number"]{-moz-appearance:textfield}
 /* В режиме шкафа страница специально длиннее экрана: полки уходят вниз. */
 #view-shelf.case-open .shelf-wrap{
   flex:0 0 auto;display:block;
-  padding-bottom:clamp(40px,6vh,80px);
+  padding-bottom:clamp(8px,1.4vh,18px);
 }
 .shelf-wrap.is-case .shelf-plank{display:none}
+/* Эллипс подсветки обрывается по нижнему краю обёртки, и в режиме шкафа этот
+   срез читался как обрезанная тень последней полки. Убираем его. */
+.shelf-wrap.is-case::before{display:none}
 .shelf-wrap.is-case .shelf{
   display:block;min-height:0;padding-top:0;
   max-width:1300px;
@@ -1591,6 +1607,9 @@ input[type="number"]{-moz-appearance:textfield}
   display:flex;flex-direction:column;gap:0;
   width:100%;max-width:900px;margin:0 auto;
   padding:0 var(--pad);
+  /* Подвал идёт следующим блоком и по порядку рисовался бы поверх — тень
+     нижней полки пряталась бы под ним. Слой поднимает шкаф над подвалом. */
+  position:relative;z-index:3;
 }
 .bc-shelf{position:relative}
 /* Книги стоят на планке, поэтому ряд выровнен по низу, а перспектива нужна
@@ -1614,6 +1633,14 @@ input[type="number"]{-moz-appearance:textfield}
   background:linear-gradient(180deg,rgba(58,32,20,.16),transparent 80%);
   filter:blur(5px);
 }
+/* Нижняя полка стоит над подвалом, поэтому её тень длиннее и ложится прямо
+   на логотип — иначе она обрывалась ровно по нижнему краю шкафа. */
+.bc-shelf:last-child .bc-plank::after{
+  right:4%;height:86px;
+  background:linear-gradient(180deg,
+    rgba(58,32,20,.20),rgba(58,32,20,.06) 42%,transparent 92%);
+  filter:blur(7px);
+}
 
 /* ── корешок ──────────────────────────────────────────────────────────── */
 .bc-book{
@@ -1635,10 +1662,12 @@ input[type="number"]{-moz-appearance:textfield}
   box-shadow:0 6px 14px -6px rgba(var(--shadow),.5);
   cursor:pointer;
 }
-/* Наведённая книга «выдвигается»: верх наклоняется к зрителю и чуть
-   приподнимается — так же, как книгу достают с полки пальцем за верх. */
+/* Наведённая книга «выдвигается»: верх наклоняется наружу, к зрителю, и чуть
+   приподнимается — так же, как книгу достают с полки пальцем за верх.
+   Знак у rotateX отрицательный: ось Y в CSS смотрит вниз, поэтому
+   положительный угол уводил бы верх корешка от зрителя, внутрь полки. */
 .bc-book:hover,.bc-book:focus-visible{
-  transform:rotate(var(--lean,0deg)) translateY(-10px) rotateX(15deg);
+  transform:rotate(var(--lean,0deg)) translateY(-10px) rotateX(-15deg);
   box-shadow:0 20px 30px -12px rgba(var(--shadow),.5);
   filter:brightness(1.07);
   z-index:3;
