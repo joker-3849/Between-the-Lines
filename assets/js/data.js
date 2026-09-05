@@ -56,6 +56,13 @@ export function freeBookId(title) {
   return `${base}-${n}`;
 }
 
+/** Убирает книгу из состояния страницы (не из файла). */
+export function dropBook(id) {
+  const i = state.books.findIndex(b => b.id === id);
+  if (i >= 0) state.books.splice(i, 1);
+  state.bookById.delete(id);
+}
+
 /** Добавляет книгу в текущее состояние страницы (не в файл) и возвращает её. */
 export function addDraftBook(book) {
   const draft = { ...book, _draft: true };
@@ -134,13 +141,18 @@ export function memberMean(memberId, books = state.books) {
   return vals.reduce((a, b) => a + b, 0) / vals.length;
 }
 
-/** Все выписанные строчки: [{book, member, line}] */
+/**
+ * Все выписанные строчки: и цитаты из книг, и свои формулировки.
+ * В данных это два разных поля (quote и line) — здесь они сводятся в один
+ * список с признаком kind, чтобы страницы не разбирались в этом сами.
+ */
 export function allLines(books = state.books) {
   const out = [];
   books.forEach(b => {
     state.members.forEach(m => {
-      const line = b.reviews?.[m.id]?.line;
-      if (line?.text) out.push({ book: b, member: m, line });
+      const rev = b.reviews?.[m.id];
+      if (rev?.quote?.text) out.push({ book: b, member: m, kind: 'book', line: rev.quote });
+      if (rev?.line?.text) out.push({ book: b, member: m, kind: 'club', line: rev.line });
     });
   });
   return out;

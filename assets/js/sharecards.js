@@ -265,7 +265,7 @@ function drawCover(ctx, book) {
 
 /* ── карточка 2: цитата ───────────────────────────────────────────────── */
 
-function drawQuote(ctx, book, { line, member }) {
+function drawQuote(ctx, book, { line, member, kind }) {
   const p = palette();
   ctx.fillStyle = p.paper;
   ctx.fillRect(0, 0, W, H);
@@ -295,7 +295,7 @@ function drawQuote(ctx, book, { line, member }) {
   ctx.fillStyle = p.gold;
   ctx.fillText(`— ${member.name}`, W / 2, bottom + 120);
 
-  if (line.kind === 'book') {
+  if (kind === 'book') {
     ctx.font = `500 24px ${SANS}`;
     ctx.letterSpacing = '5px';
     ctx.fillStyle = p.faint;
@@ -593,20 +593,24 @@ function shade(hex, pct) {
 /* ── список карточек для книги ────────────────────────────────────────── */
 
 function linesOf(book) {
-  return state.members
-    .map(m => ({ member: m, line: book.reviews?.[m.id]?.line }))
-    .filter(x => x.line?.text);
+  const out = [];
+  state.members.forEach(m => {
+    const rev = book.reviews?.[m.id];
+    if (rev?.quote?.text) out.push({ member: m, line: rev.quote, kind: 'book' });
+    if (rev?.line?.text) out.push({ member: m, line: rev.line, kind: 'club' });
+  });
+  return out;
 }
 
 /** Какие карточки имеет смысл рисовать для этой книги. */
 export function cardsFor(book) {
   const cards = [{ id: 'cover', name: 'Обложка', draw: c => drawCover(c, book) }];
 
-  linesOf(book).slice(0, 3).forEach(({ member, line }, i) => {
+  linesOf(book).slice(0, 3).forEach(({ member, line, kind }, i) => {
     cards.push({
-      id: `quote-${member.id}`,
+      id: `${kind === 'book' ? 'quote' : 'line'}-${member.id}`,
       name: i === 0 ? 'Цитата' : `Цитата · ${member.name}`,
-      draw: c => drawQuote(c, book, { line, member })
+      draw: c => drawQuote(c, book, { line, member, kind })
     });
   });
 

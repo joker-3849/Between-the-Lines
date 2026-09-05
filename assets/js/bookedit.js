@@ -8,7 +8,7 @@
  * под ним ряд кружков. Средний балл нигде не вводится — он пересчитывается
  * на лету из выставленных критериев. */
 
-import { state, memberScore, num } from './data.js';
+import { state, memberScore, num, dropBook } from './data.js';
 import { coverHTML, mountCovers, avatarHTML, esc,
          scorePickerHTML, rereadPickerHTML, wirePickers, readPicked, pickedMean } from './ui.js';
 import { icon, hydrateIcons } from './icons.js';
@@ -89,14 +89,15 @@ function memberHTML(m) {
       <textarea id="be-text-${esc(m.id)}" class="be-text" data-member="${esc(m.id)}">${esc(rev.text ?? '')}</textarea>
     </div>
     <div class="field">
-      <label for="be-line-${esc(m.id)}">Строчка, которую забрали с собой</label>
+      <label for="be-quote-${esc(m.id)}">Цитата из книги</label>
+      <textarea id="be-quote-${esc(m.id)}" class="be-quote" data-member="${esc(m.id)}"
+        style="min-height:52px">${esc(rev.quote?.text ?? '')}</textarea>
+    </div>
+    <div class="field">
+      <label for="be-line-${esc(m.id)}">Между строк</label>
       <textarea id="be-line-${esc(m.id)}" class="be-line" data-member="${esc(m.id)}"
         style="min-height:52px">${esc(rev.line?.text ?? '')}</textarea>
-      <label class="check-inline">
-        <input type="checkbox" class="be-line-book" data-member="${esc(m.id)}"
-          ${rev.line?.kind === 'book' ? 'checked' : ''}>
-        <span>это цитата из книги, а не своя формулировка</span>
-      </label>
+      <p class="field-hint">Опишите ваше впечатление одной фразой.</p>
     </div>
   </section>`;
 }
@@ -111,6 +112,9 @@ function render() {
       <span class="be-bar-note">Меняйте что угодно и нажмите «Сохранить».
         Средний балл считается сам.</span>
       <div class="be-bar-actions">
+        <button type="button" class="btn btn-danger" id="beDelete">
+          ${icon('trash')} Удалить книгу
+        </button>
         <button type="button" class="btn btn-ghost" id="beCancel">Отменить</button>
         <button type="submit" class="btn btn-primary">${icon('device-floppy')} Сохранить</button>
       </div>
@@ -150,6 +154,7 @@ function wire(view) {
   wirePickers(view.querySelector('.be-members'), refreshMean);
 
   view.querySelector('#beCancel').addEventListener('click', () => finish(false));
+  view.querySelector('#beDelete').addEventListener('click', removeBook);
   form.addEventListener('submit', e => { e.preventDefault(); save(form); });
 }
 
@@ -162,6 +167,25 @@ function refreshMean(memberId) {
   box.textContent = mean == null ? '—' : num(mean);
 }
 
+/* ── удаление ─────────────────────────────────────────────────────────── */
+
+/** Убирает книгу с полки. Как и правки, только в памяти вкладки. */
+function removeBook() {
+  const target = book;
+  if (!target) return;
+  const ok = window.confirm(
+    `Удалить «${target.title}» с полки?\n\n` +
+    'Книга исчезнет из этой вкладки сразу. Чтобы она не вернулась после '
+    + `перезагрузки, удалите элемент с id "${target.id}" из data/books.json.`);
+  if (!ok) return;
+
+  dropBook(target.id);
+  book = null;
+  const done = onDone;
+  onDone = () => {};
+  done(false, target, { deleted: true });
+}
+
 /* ── сохранение ───────────────────────────────────────────────────────── */
 
 function collectReviews(form) {
@@ -171,15 +195,16 @@ function collectReviews(form) {
     const { scores, reread } = readPicked(form, m.id);
     const text = form.querySelector(`.be-text${sel}`)?.value.trim() || '';
     const lineText = form.querySelector(`.be-line${sel}`)?.value.trim() || '';
-    const fromBook = form.querySelector(`.be-line-book${sel}`)?.checked || false;
+    const quoteText = form.querySelector(`.be-quote${sel}`)?.value.trim() || '';
 
     // Совсем пустого участника в данные не пишем — иначе полка обрастает
     // отзывами-призраками, которые нигде не показываются.
-    if (!Object.keys(scores).length && !text && !lineText && reread == null) return;
+    if (!Object.keys(scores).length && !text && !lineText && !quoteText && reread == null) return;
 
     reviews[m.id] = {
       scores, reread, text,
-      line: lineText ? { kind: fromBook ? 'book' : 'club', text: lineText } : null
+      line: lineText ? { text: lineText } : null,
+      quote: quoteText ? { text: quoteText } : null
     };
   });
   return reviews;

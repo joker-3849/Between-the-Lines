@@ -31,7 +31,7 @@ export function renderLines() {
       `<button class="chip" data-member="${esc(m.id)}" aria-pressed="${linesFilter === m.id}">${esc(m.name)}</button>`)
   ].join('');
 
-  const cards = items.map(({ book, member, line }) => `
+  const cards = items.map(({ book, member, line, kind }) => `
     <figure class="line-card">
       <blockquote class="line-q">«${esc(line.text)}»</blockquote>
       <figcaption class="line-meta">
@@ -39,7 +39,7 @@ export function renderLines() {
         <span>${esc(member.name)}</span>
         <span aria-hidden="true">·</span>
         <button class="line-book" data-book-link="${esc(book.id)}">${esc(book.title)}</button>
-        ${line.kind === 'book' ? '<span class="tag-book">из книги</span>' : ''}
+        ${kind === 'book' ? '<span class="tag-book">из книги</span>' : ''}
       </figcaption>
     </figure>`).join('');
 
@@ -228,19 +228,22 @@ function lineOfYearHTML(year, list) {
   const pick = state.club.yearHighlights?.[year]?.lineOfTheYear;
   let book = pick && state.bookById.get(pick.bookId);
   let member = pick && state.memberById.get(pick.memberId);
+  // Выбранная строчка года — своя формулировка участницы; если её нет,
+  // берём первую попавшуюся из года, включая цитаты из книг.
   let line = book && member ? book.reviews?.[member.id]?.line : null;
+  let kind = 'club';
 
-  if (!line) {
+  if (!line?.text) {
     const any = allLines(list)[0];
     if (!any) return '';
-    ({ book, member, line } = any);
+    ({ book, member, line, kind } = any);
   }
 
   return `<section class="yr-act">
     <div class="yr-label">Строчка года</div>
     <blockquote class="yr-quote">«${esc(line.text)}»</blockquote>
     <p class="yr-quote-by">
-      ${esc(member.name)} — о книге «${esc(book.title)}»${line.kind === 'book' ? ', цитата из книги' : ''}
+      ${esc(member.name)} — о книге «${esc(book.title)}»${kind === 'book' ? ', цитата из книги' : ''}
     </p>
   </section>`;
 }

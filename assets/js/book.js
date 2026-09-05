@@ -10,6 +10,7 @@ import { coverOnShelf } from './shelf.js';
 import { showBookJSON } from './addbook.js';
 import { openBookEditor } from './bookedit.js';
 import { openShareModal } from './share.js';
+import { requireUnlock } from './lock.js';
 
 const reduced = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
@@ -63,18 +64,16 @@ function impressionsHTML(book) {
     </div>`).join('')}`;
 }
 
-function takenHTML(book) {
+/** Цитаты из книги и свои формулировки — два отдельных раздела. */
+function takenHTML(book, field, title) {
   const items = state.members
-    .map(m => ({ m, line: book.reviews?.[m.id]?.line }))
+    .map(m => ({ m, line: book.reviews?.[m.id]?.[field] }))
     .filter(x => x.line?.text);
   if (!items.length) return '';
-  return `<h2 class="section-h">Забрали с собой</h2>
+  return `<h2 class="section-h">${esc(title)}</h2>
     <div class="taken">${items.map(({ m, line }) => `<div class="taken-item">
       <p class="taken-text">${esc(line.text)}</p>
-      <div class="taken-from">
-        ${line.kind === 'book' ? '<span class="tag-book">из книги</span>' : ''}
-        <span>${esc(m.name)}</span>
-      </div>
+      <div class="taken-from"><span>${esc(m.name)}</span></div>
     </div>`).join('')}</div>`;
 }
 
@@ -85,20 +84,20 @@ function render(book) {
     <div class="bp-left">
       ${tiltWrap(coverHTML(book, 'bp-cover'), 'tilt-bp')}
       ${factsHTML(book)}
+      <div class="bp-actions">
+        <button type="button" class="btn btn-ghost" id="shareBook">
+          <span class="ic" data-icon="share"></span> Поделиться
+        </button>
+        <button type="button" class="btn btn-ghost" id="editBook">
+          <span class="ic" data-icon="pencil"></span> Внести изменения
+        </button>
+      </div>
     </div>
     <div class="bp-right">
       <h1 class="bp-title">${esc(book.title)}</h1>
       <p class="bp-author">${esc(book.author)}</p>
 
-      <div class="section-head">
-        <h2 class="section-h">Оценки клуба</h2>
-        <button type="button" class="btn btn-ghost bp-share" id="shareBook">
-          <span class="ic" data-icon="share"></span> Поделиться
-        </button>
-        <button type="button" class="btn btn-ghost bp-edit" id="editBook">
-          <span class="ic" data-icon="pencil"></span> Внести изменения
-        </button>
-      </div>
+      <h2 class="section-h">Оценки клуба</h2>
       ${scoresFor(book).length ? `
         <div class="bp-widgets">
           ${gaugeHTML(book)}
@@ -109,7 +108,8 @@ function render(book) {
         ${memberCardsHTML(book)}
       ` : '<p class="bp-verdict-note">Оценок пока нет — нажмите «Внести изменения» и заполните.</p>'}
       ${impressionsHTML(book)}
-      ${takenHTML(book)}
+      ${takenHTML(book, 'quote', 'Цитаты из книги')}
+      ${takenHTML(book, 'line', 'Между строк')}
     </div>
   </article>`;
 
@@ -118,8 +118,14 @@ function render(book) {
   mountTilt(view);
   view.querySelector('#showDraftJson')?.addEventListener('click', () => showBookJSON(book));
   view.querySelector('#shareBook')?.addEventListener('click', () => openShareModal(book));
-  view.querySelector('#editBook')?.addEventListener('click', () => {
-    openBookEditor(book, { onDone: () => rerender(book) });
+  view.querySelector('#editBook')?.addEventListener('click', async () => {
+    if (!await requireUnlock()) return;
+    openBookEditor(book, {
+      onDone: (saved, edited, opts) => {
+        if (opts?.deleted) { current = null; deps.onBookChanged?.(); deps.setView('shelf'); return; }
+        rerender(book);
+      }
+    });
   });
   return view;
 }

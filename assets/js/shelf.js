@@ -6,6 +6,7 @@ import { coverHTML, mountCovers, loadedCovers, resetLoadedCovers, esc } from './
 import * as settings from './settings.js';
 import { icon, hydrateIcons } from './icons.js';
 import { openAddBookModal } from './addbook.js';
+import { bookcaseHTML } from './bookcase.js';
 
 const FACE_OUT = 7;          // сколько книг стоят лицом, прежде чем начнётся стопка
 const PILE_MAX = 5;          // сколько книг видно в стопке; остальные просто не показываем
@@ -137,16 +138,6 @@ function slotHTML(book) {
   </div>`;
 }
 
-function addSlotHTML() {
-  return `<div class="slot add-slot">
-    <button type="button" class="book3d add-book-btn" id="addBookTile"
-      aria-haspopup="dialog" aria-label="Добавить новую книгу на полку">
-      <span class="add-plus">${icon('plus')}</span>
-      <span class="add-label">Добавить<br>книгу</span>
-    </button>
-  </div>`;
-}
-
 function pileHTML(rest) {
   if (!rest.length) return '';
   const shown = rest.slice(0, PILE_MAX);
@@ -238,21 +229,36 @@ function coverWidthForHeight() {
     - (foot ? foot.offsetHeight : 0)
     - TILT_OVERHANG;
 
+  fitPile(avail);
   return clampCover(avail / COVER_RATIO);
 }
 
 const clampCover = w => Math.max(COVER_MIN, Math.min(COVER_MAX, Math.round(w)));
 
+const PILE_ROW_MIN = 26, PILE_ROW_MAX = 40, PILE_HEAD = 34, PILE_GAP = 5;
+
+/**
+ * Высоту полки задают не только книги: рядом стоит стопка, и на невысоком
+ * экране именно она оказывается самой высокой. Поэтому плашки стопки тоже
+ * ужимаются под оставшуюся высоту — иначе книги упираются в минимум, а
+ * страница всё равно прокручивается.
+ */
+function fitPile(avail) {
+  const row = (avail - PILE_HEAD) / PILE_MAX - PILE_GAP;
+  const px = Math.max(PILE_ROW_MIN, Math.min(PILE_ROW_MAX, Math.round(row)));
+  document.documentElement.style.setProperty('--pile-row', `${px}px`);
+}
+
+const setCoverWidth = w =>
+  document.documentElement.style.setProperty('--cover-w', `${w}px`);
+
 /** Ширина книги, при которой ряд из count книг ещё помещается по ширине. */
 function coverWidthForRow(front, count) {
   const cs = getComputedStyle(front);
   const inner = front.clientWidth - parseFloat(cs.paddingLeft || 0) - parseFloat(cs.paddingRight || 0);
-  // Ряд из count книг занимает rowFactor ширин обложки. Плитка «добавить»
-  // тоже шириной в книгу и сжимается вместе с рядом, поэтому её ширина
-  // возвращается в общий бюджет — отсюда +1 в знаменателе.
+  // Ряд из count книг занимает rowFactor ширин обложки.
   const rowFactor = 1 + (count - 1) * (1 - overlapMax(count));
-  const tile = front.querySelector('.book3d')?.offsetWidth || 0;
-  return clampCover((inner + tile) / (rowFactor + 1));
+  return clampCover(inner / rowFactor);
 }
 
 let lastFrontCount = 0;
@@ -260,16 +266,30 @@ let lastFrontCount = 0;
 /** Пересчитать размер книги и нахлёст под текущее окно. */
 export function refitShelf() {
   const front = document.querySelector('.shelf-front');
-  if (!front || !lastFrontCount) return;
+  // В режиме шкафа высота не подгоняется: полки специально уходят за экран.
+  if (!front || !lastFrontCount || ui.pileOpen) return;
 
   const byHeight = coverWidthForHeight();
   if (byHeight != null) {
-    document.documentElement.style.setProperty('--cover-w', `${byHeight}px`);
+    setCoverWidth(byHeight);
     // Второй проход: после смены размера ряду могло не хватить ширины —
     // тогда высоту недобираем, зато книги не наезжают на стопку.
     const byRow = coverWidthForRow(front, lastFrontCount);
-    if (byRow < byHeight) {
-      document.documentElement.style.setProperty('--cover-w', `${byRow}px`);
+    if (byRow < byHeight) setCoverWidth(byRow);
+
+    // Третий, поправочный: высоту полки задаёт не только книга — рядом стоит
+    // стопка, у страницы свои отступы. Считать это всё формулой хрупко,
+    // поэтому просто смотрим, вылезла ли страница за экран, и убираем ровно
+    // столько, сколько вылезло. Ниже минимума не опускаемся: если не влезает
+    // и так, пусть лучше страница прокрутится, чем книги станут неразличимы.
+    for (let pass = 0; pass < 3; pass++) {
+      const over = document.body.scrollHeight - document.documentElement.clientHeight;
+      if (over <= 1) break;
+      const now = parseFloat(getComputedStyle(document.documentElement)
+        .getPropertyValue('--cover-w')) || byHeight;
+      const next = clampCover(now - Math.ceil(over / COVER_RATIO));
+      if (next >= now) break;
+      setCoverWidth(next);
     }
   }
   fitFrontRow(front, lastFrontCount);
@@ -326,24 +346,25 @@ function wireGenreDrag(box) {
 
 export function renderShelf() {
   const shelf = document.getElementById('shelf');
+  const wrap = shelf.closest('.shelf-wrap');
   const empty = document.getElementById('shelfEmpty');
   const list = visibleBooks();
 
   empty.hidden = list.length > 0;
+  wrap.classList.toggle('is-case', ui.pileOpen);
+  document.getElementById('view-shelf').classList.toggle('case-open', ui.pileOpen);
 
-  const faceCount = ui.pileOpen ? list.length : Math.min(FACE_OUT, list.length);
-  const front = list.slice(0, faceCount);
-  const rest = list.slice(faceCount);
+  if (ui.pileOpen) {
+    renderCase(shelf, list);
+    return;
+  }
+
+  const front = list.slice(0, Math.min(FACE_OUT, list.length));
+  const rest = list.slice(front.length);
 
   shelf.innerHTML =
-    `<div class="shelf-front${ui.pileOpen ? ' expanded' : ''}">${front.map(slotHTML).join('')}</div>` +
-    addSlotHTML() +
-    (ui.pileOpen && list.length > FACE_OUT
-      ? `<div class="pile"><div class="pile-head">
-           ${icon('stack')}<span>стопка разложена</span>
-           <button class="pile-toggle" id="pileToggle">собрать</button>
-         </div></div>`
-      : pileHTML(rest));
+    `<div class="shelf-front">${front.map(slotHTML).join('')}</div>` +
+    pileHTML(rest);
 
   hydrateIcons(shelf);
   resetLoadedCovers();
@@ -362,14 +383,59 @@ export function renderShelf() {
     renderShelf();
   });
 
-  document.getElementById('addBookTile')?.addEventListener('click', openAddBookModal);
-
   lastFrontCount = front.length;
   requestAnimationFrame(refitShelf);
 }
 
-/** Перерисовать панель и полку после добавления книги — вызывается извне. */
+/* ── шкаф: вся библиотека на нескольких полках ────────────────────────── */
+
+/**
+ * Раскладку приходится считать в два прохода: сколько книг влезет в ряд,
+ * видно только по фактической ширине шкафа, а она известна лишь после того,
+ * как он встал в разметку. Первый проход рисует шкаф по ширине контейнера,
+ * второй — уточняет по себе же.
+ */
+function renderCase(shelf, list) {
+  const draw = width => {
+    shelf.innerHTML =
+      `<div class="case-head">
+         ${icon('stack')}
+         <span>${nPlural(list.length, 'книга', 'книги', 'книг')} на полках</span>
+         <button class="pile-toggle" id="pileToggle">собрать</button>
+       </div>` +
+      bookcaseHTML(list, width);
+    hydrateIcons(shelf);
+    wireCase(shelf);
+  };
+
+  draw(shelf.clientWidth - 2 * padOf(shelf));
+  requestAnimationFrame(() => {
+    const row = shelf.querySelector('.bc-row');
+    if (row && Math.abs(row.clientWidth - lastCaseWidth) > 4) {
+      lastCaseWidth = row.clientWidth;
+      draw(row.clientWidth);
+    }
+  });
+}
+
+let lastCaseWidth = 0;
+
+const padOf = el => parseFloat(getComputedStyle(el).paddingLeft || 0);
+
+function wireCase(shelf) {
+  shelf.querySelectorAll('[data-id]').forEach(el => {
+    el.addEventListener('click', () => onOpen(el.dataset.id, el.querySelector('.cover')));
+  });
+  document.getElementById('pileToggle')?.addEventListener('click', () => {
+    ui.pileOpen = false;
+    renderShelf();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
+}
+
+/** Перерисовать шапку, панель и полку после добавления или удаления книги. */
 export function refreshShelf() {
+  renderHead();      // в подзаголовке число книг и жанров — оно тоже меняется
   renderToolbar();
   renderShelf();
 }
@@ -408,6 +474,8 @@ export function initShelf(openBook) {
     ui.pileOpen = false;
     renderShelf();
   });
+
+  document.getElementById('addBookBtn').addEventListener('click', openAddBookModal);
 
   document.getElementById('coversToggle').addEventListener('click', e => {
     const b = e.target.closest('[data-covers]');

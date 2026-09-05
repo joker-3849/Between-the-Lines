@@ -52,11 +52,11 @@
     </div>
 
     <div class="toolbar" id="toolbar">
+      <div class="tb-row tb-row-main">
       <div class="tb-search">
         <span class="ic" data-icon="search"></span>
         <input type="search" id="search" placeholder="Название или автор" aria-label="Поиск по полке" autocomplete="off">
       </div>
-      <div class="tb-genres" id="genres" role="group" aria-label="Фильтр по жанру"></div>
       <div class="tb-sort">
         <label class="visually-hidden" for="sort">Сортировка</label>
         <select id="sort">
@@ -77,6 +77,11 @@
           <span class="ic" data-icon="photo"></span>
         </button>
       </div>
+      <button type="button" class="btn btn-primary tb-add" id="addBookBtn" aria-haspopup="dialog">
+        <span class="ic" data-icon="plus"></span><span class="tb-add-label">Добавить книгу</span>
+      </button>
+      </div>
+      <div class="tb-genres" id="genres" role="group" aria-label="Фильтр по жанру"></div>
     </div>
     <p class="covers-hint" id="coversHint" hidden></p>
 

@@ -9,6 +9,7 @@ import { avatarHTML, isbnCoverURL, esc,
 import { randomArt, motifSVG } from './covers.js';
 import { icon, hydrateIcons } from './icons.js';
 import { openModal, closeModal, initModal } from './modal.js';
+import { requireUnlock } from './lock.js';
 
 let onAdded = () => {};
 let art = null;
@@ -51,12 +52,13 @@ function memberFieldsetHTML(m) {
         <textarea class="nb-text" data-member="${m.id}"></textarea>
       </div>
       <div class="field">
-        <label>Строчка, которую забрали с собой (необязательно)</label>
+        <label>Цитата из книги (необязательно)</label>
+        <textarea class="nb-quote" data-member="${m.id}" style="min-height:52px"></textarea>
+      </div>
+      <div class="field">
+        <label>Между строк (необязательно)</label>
         <textarea class="nb-line" data-member="${m.id}" style="min-height:52px"></textarea>
-        <label class="check-inline">
-          <input type="checkbox" class="nb-line-book" data-member="${m.id}">
-          <span>это цитата из книги, а не своя формулировка</span>
-        </label>
+        <p class="field-hint">Опишите ваше впечатление одной фразой.</p>
       </div>
     </div>
   </details>`;
@@ -212,12 +214,13 @@ function buildReviews(form) {
     const { scores, reread } = readPicked(form, m.id);
     const text = form.querySelector(`.nb-text[data-member="${m.id}"]`)?.value.trim() || '';
     const lineText = form.querySelector(`.nb-line[data-member="${m.id}"]`)?.value.trim() || '';
-    const lineIsBook = form.querySelector(`.nb-line-book[data-member="${m.id}"]`)?.checked || false;
+    const quoteText = form.querySelector(`.nb-quote[data-member="${m.id}"]`)?.value.trim() || '';
     // участник пока не заполнял — пропускаем
-    if (!Object.keys(scores).length && !text && !lineText && reread == null) return;
+    if (!Object.keys(scores).length && !text && !lineText && !quoteText && reread == null) return;
     reviews[m.id] = {
       scores, reread, text,
-      line: lineText ? { kind: lineIsBook ? 'book' : 'club', text: lineText } : null
+      line: lineText ? { text: lineText } : null,
+      quote: quoteText ? { text: quoteText } : null
     };
   });
   return reviews;
@@ -261,7 +264,8 @@ function submitForm(form) {
 
 /* ── публичные точки входа ───────────────────────────────────────────── */
 
-export function openAddBookModal() {
+export async function openAddBookModal() {
+  if (!await requireUnlock()) return;
   art = randomArt();
   openModal('Добавить книгу', formHTML());
   wireForm();
