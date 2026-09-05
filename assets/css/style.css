@@ -288,29 +288,8 @@ img{max-width:100%;display:block}
 .tb-sort select:hover{color:var(--ink)}
 .tb-sort option{background:var(--void-2);color:var(--ink)}
 
-/* переключатель обложек */
-/* Переключатель обложек — две иконки: подписи «свои / настоящие» съедали
-   место, которого в одной строке и так нет. Смысл держат title и aria-label. */
-.tb-covers{
-  display:flex;align-items:center;gap:2px;flex:0 0 auto;
-  height:var(--ctl-h);
-  color:var(--faint);
-  border:1px solid var(--rule);border-radius:999px;
-  padding:0 3px;
-}
-.seg{
-  display:inline-flex;align-items:center;justify-content:center;
-  width:calc(var(--ctl-h) - 8px);height:calc(var(--ctl-h) - 8px);
-  border-radius:50%;
-  color:var(--dim);
-  transition:color .2s var(--ease),background .2s var(--ease);
-}
-.seg .ic{width:17px;height:17px}
-.seg:hover{color:var(--ink)}
-.seg[aria-pressed="true"]{color:var(--void);background:var(--ink)}
-
-/* Замок — такой же кружок, как переключатель обложек: одна редкая кнопка
-   не должна перетягивать на себя строку с поиском и «Добавить книгу». */
+/* Замок — небольшой кружок рядом с «Добавить книгу»: одна редкая кнопка
+   не должна перетягивать на себя строку с поиском и сортировкой. */
 .tb-lock{
   flex:0 0 auto;
   display:inline-flex;align-items:center;justify-content:center;
@@ -322,14 +301,6 @@ img{max-width:100%;display:block}
 .tb-lock:hover{color:var(--ink);border-color:var(--ghost)}
 .tb-lock[hidden]{display:none}
 .tb-lock .ic{width:16px;height:16px}
-
-.covers-hint{
-  max-width:var(--maxw);
-  margin:14px auto 0;padding:0 var(--pad);
-  text-align:right;
-  font-size:12px;line-height:1.6;color:var(--faint);
-}
-.covers-hint[hidden]{display:none}
 
 /* ── полка ────────────────────────────────────────────────────────────── */
 .shelf-wrap{
@@ -374,13 +345,19 @@ img{max-width:100%;display:block}
 }
 /* Тень идёт во всю ширину страницы и гаснет только у самых краёв — раньше
    она обрывалась по ширине полки, и обрыв был виден. Основную работу по
-   объёму всё равно делает контактная тень каждой книги (.slot::after). */
+   объёму всё равно делает контактная тень каждой книги (.slot::after).
+   Градиент начинается прозрачным и набирает силу ниже линии: если начать
+   его сразу под ней в полную силу, линия читается как срез тени. */
 .shelf-plank::after{
-  content:"";position:absolute;left:0;right:0;top:1px;height:40px;
-  background:linear-gradient(to bottom,rgba(58,32,20,.14),transparent 80%);
-  filter:blur(7px);
-  -webkit-mask-image:linear-gradient(90deg,transparent,#000 6%,#000 94%,transparent);
-  mask-image:linear-gradient(90deg,transparent,#000 6%,#000 94%,transparent);
+  content:"";position:absolute;left:0;right:0;top:-8px;height:62px;
+  background:linear-gradient(to bottom,
+    transparent 0,
+    rgba(58,32,20,.13) 22%,
+    rgba(58,32,20,.045) 55%,
+    transparent 100%);
+  filter:blur(10px);
+  -webkit-mask-image:linear-gradient(90deg,transparent,#000 12%,#000 88%,transparent);
+  mask-image:linear-gradient(90deg,transparent,#000 12%,#000 88%,transparent);
 }
 .shelf-empty{
   text-align:center;color:var(--faint);
@@ -490,18 +467,10 @@ img{max-width:100%;display:block}
   overflow:hidden;
   background:var(--bg,#1c1a17);
 }
-.cover-img{
-  position:absolute;inset:0;
-  width:100%;height:100%;object-fit:cover;
-  opacity:0;transition:opacity .5s var(--ease);
-}
-.cover.has-img .cover-img{opacity:1}
-.cover.has-img .cover-fallback{opacity:0}
 .cover-fallback{
   position:absolute;inset:0;
   display:flex;flex-direction:column;justify-content:space-between;
   color:var(--fg,#f0e9db);
-  transition:opacity .4s var(--ease);
 }
 .cover-art{
   /* Рисунок начинается ниже строки жанра, иначе геометрия наезжает на неё
@@ -928,7 +897,7 @@ img{max-width:100%;display:block}
    у сортировки и переключателя, укорачиваем подписи, а поиск сжимаем до
    иконки — он разворачивается обратно, как только в него встают курсором. */
 @media (max-width:820px){
-  .tb-sort > .ic,.tb-covers > .ic{display:none}
+  .tb-sort > .ic{display:none}
   .tb-sort select{max-width:126px}
   /* На узкой строке кнопке хватает одного плюса — подпись прячем. */
   .tb-add{padding:0;width:var(--ctl-h);justify-content:center}
@@ -1119,17 +1088,6 @@ figure,blockquote,dl,dd{margin:0}
   font-size:11px;color:var(--dim);background:rgba(43,28,20,.06);
   padding:1px 6px;border-radius:5px;
 }
-
-.isbn-row{display:flex;gap:14px;align-items:flex-start}
-.isbn-row input{flex:1}
-.isbn-preview{
-  flex:0 0 auto;width:44px;aspect-ratio:2/3;
-  border:1px solid var(--rule);border-radius:8px;
-  display:flex;align-items:center;justify-content:center;
-  color:var(--faint);overflow:hidden;background:rgba(43,28,20,.04);
-}
-.isbn-preview img{width:100%;height:100%;object-fit:cover}
-.isbn-preview .ic{width:16px;height:16px}
 
 .art-row{display:flex;gap:20px;align-items:center;margin:24px 0 30px}
 .art-preview{width:104px;height:156px;flex:0 0 auto;font-size:11px}
@@ -1641,27 +1599,36 @@ input[type="number"]{-moz-appearance:textfield}
 }
 .bc-plank{
   position:relative;height:2px;
-  background:linear-gradient(90deg,var(--ghost),var(--rule) 92%,transparent);
+  background:linear-gradient(90deg,transparent,var(--ghost) 3%,var(--rule) 88%,transparent);
   margin-bottom:34px;
 }
-/* Тень под планкой отделяет полку от следующей, не рисуя лишней линии. */
+/* Тень под планкой отделяет полку от следующей, не рисуя лишней линии.
+   Маска гасит её по бокам, а градиент начинается прозрачным — иначе у тени
+   видны все четыре края бокса и она выглядит наклеенным прямоугольником. */
 .bc-plank::after{
-  content:"";position:absolute;left:0;right:10%;top:2px;height:34px;
-  background:linear-gradient(180deg,rgba(58,32,20,.16),transparent 100%);
-  filter:blur(5px);
+  content:"";position:absolute;left:0;right:0;top:-4px;height:52px;
+  background:linear-gradient(180deg,
+    transparent 0,
+    rgba(58,32,20,.15) 20%,
+    rgba(58,32,20,.05) 56%,
+    transparent 100%);
+  filter:blur(8px);
+  -webkit-mask-image:linear-gradient(90deg,transparent,#000 9%,#000 84%,transparent);
+  mask-image:linear-gradient(90deg,transparent,#000 9%,#000 84%,transparent);
 }
 /* Нижняя полка стоит над подвалом, поэтому её тень длиннее и ложится прямо
    на логотип — иначе она обрывалась ровно по нижнему краю шкафа. Градиент
    гаснет ровно на 100% высоты: если оборвать его раньше, нижняя граница
    бокса читается как срез. */
 .bc-shelf:last-child .bc-plank::after{
-  right:2%;height:150px;
+  height:170px;
   background:linear-gradient(180deg,
-    rgba(58,32,20,.22),
-    rgba(58,32,20,.08) 30%,
-    rgba(58,32,20,.025) 62%,
+    transparent 0,
+    rgba(58,32,20,.19) 7%,
+    rgba(58,32,20,.07) 32%,
+    rgba(58,32,20,.02) 64%,
     transparent 100%);
-  filter:blur(9px);
+  filter:blur(11px);
 }
 
 /* ── корешок ──────────────────────────────────────────────────────────── */
@@ -1684,13 +1651,14 @@ input[type="number"]{-moz-appearance:textfield}
   box-shadow:0 6px 14px -6px rgba(var(--shadow),.5);
   cursor:pointer;
 }
-/* Наведённая книга «выдвигается»: верх наклоняется наружу, к зрителю, и чуть
-   приподнимается — так же, как книгу достают с полки пальцем за верх.
+/* Наведённая книга не выдвигается целиком: низ остаётся на планке, а верх
+   корешка наклоняется наружу, к зрителю, — так книгу и цепляют пальцем.
+   Точка вращения (100% 100%) стоит на планке, поэтому подъём не нужен.
    Знак у rotateX отрицательный: ось Y в CSS смотрит вниз, поэтому
    положительный угол уводил бы верх корешка от зрителя, внутрь полки. */
 .bc-book:hover,.bc-book:focus-visible{
-  transform:rotate(var(--lean,0deg)) translateY(-10px) rotateX(-15deg);
-  box-shadow:0 20px 30px -12px rgba(var(--shadow),.5);
+  transform:rotate(var(--lean,0deg)) rotateX(-20deg);
+  box-shadow:0 16px 26px -10px rgba(var(--shadow),.55);
   filter:brightness(1.07);
   z-index:3;
 }
@@ -1763,7 +1731,7 @@ input[type="number"]{-moz-appearance:textfield}
   z-index:3;
 }
 .bc-flat-title{
-  font-family:var(--serif);font-size:11px;line-height:1;
+  font-family:var(--serif);font-size:13px;line-height:1;
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
   opacity:.9;
 }

@@ -3,7 +3,6 @@
 import { state, num } from './data.js';
 import { icon } from './icons.js';
 import { motifSVG, DEFAULT_ART } from './covers.js';
-import * as settings from './settings.js';
 
 export const esc = s => String(s ?? '').replace(/[&<>"']/g,
   c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -11,41 +10,15 @@ export const esc = s => String(s ?? '').replace(/[&<>"']/g,
 /* ── обложка ──────────────────────────────────────────────────────────── */
 
 /**
- * Адрес обложки на Open Library по ISBN издания.
- * default=false заставляет сервис отдать 404 вместо пустой серой заглушки,
- * поэтому неверный ISBN честно уходит в запасной вариант, а не показывает
- * пустое место.
- */
-export function isbnCoverURL(isbn) {
-  if (typeof isbn !== 'string') return null;
-  const digits = isbn.replace(/[^0-9Xx]/g, '');
-  if (digits.length !== 10 && digits.length !== 13) return null;
-  return `https://covers.openlibrary.org/b/isbn/${digits}-L.jpg?default=false`;
-}
-
-/** В режиме «свои обложки» картинки не запрашиваются вовсе. */
-function coverSources(book) {
-  if (settings.get('covers') !== 'real') return [];
-  const list = [];
-  if (book.cover) list.push(book.cover);
-  const ol = isbnCoverURL(book.isbn);
-  if (ol) list.push(ol);
-  if (Array.isArray(book.coverRemote)) list.push(...book.coverRemote);
-  return list;
-}
-
-/**
- * Разметка обложки. Пока картинка не загрузилась (или её нет вовсе),
- * видна типографская обложка — она же остаётся постоянным запасным вариантом.
+ * Разметка обложки. Обложки у клуба свои, типографские: единственным
+ * источником фотографий был Open Library, а он по нашим книгам ничего не
+ * отдаёт — переключатель «свои / настоящие» вместе с ним и убран.
  */
 export function coverHTML(book, cls = '') {
-  const sources = coverSources(book);
   const art = { ...DEFAULT_ART, ...(book.art || {}) };
   const vars = `--bg:${esc(art.bg)};--fg:${esc(art.fg)};--acc:${esc(art.acc)}`;
 
-  return `<div class="cover ${cls}" style="${vars}"
-       data-sources="${esc(JSON.stringify(sources))}">
-    <img class="cover-img" alt="Обложка: ${esc(book.title)}" loading="lazy">
+  return `<div class="cover ${cls}" style="${vars}">
     <div class="cover-fallback">
       ${motifSVG(art.motif)}
       <div class="cf-top">
@@ -65,37 +38,6 @@ export function coverHTML(book, cls = '') {
 /** Цвета обложки — нужны стопке, где книга видна только корешком. */
 export function artOf(book) {
   return { ...DEFAULT_ART, ...(book.art || {}) };
-}
-
-let loaded = 0;
-
-/** Сколько настоящих обложек успело загрузиться с момента последнего сброса. */
-export function loadedCovers() { return loaded; }
-export function resetLoadedCovers() { loaded = 0; }
-
-/** Подключает загрузку картинок с перебором источников по очереди. */
-export function mountCovers(root = document) {
-  root.querySelectorAll('.cover[data-sources]').forEach(cover => {
-    const img = cover.querySelector('.cover-img');
-    if (!img || img.dataset.mounted) return;
-    img.dataset.mounted = '1';
-
-    let sources = [];
-    try { sources = JSON.parse(cover.dataset.sources); } catch { /* оставим пустым */ }
-    if (!sources.length) return;
-
-    let i = 0;
-    const tryNext = () => {
-      if (i >= sources.length) return;     // остаёмся на типографской обложке
-      img.src = sources[i++];
-    };
-    img.addEventListener('load', () => {
-      cover.classList.add('has-img');
-      loaded++;
-    }, { once: true });
-    img.addEventListener('error', tryNext);
-    tryNext();
-  });
 }
 
 /* ── участники ────────────────────────────────────────────────────────── */

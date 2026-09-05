@@ -2,8 +2,7 @@
    вдруг наберётся) не показываем вовсе. Плюс поиск, жанры и сортировка. */
 
 import { state, avg, spread, genres, fmtDate, nPlural, nextMeeting, num } from './data.js';
-import { coverHTML, mountCovers, loadedCovers, resetLoadedCovers, esc } from './ui.js';
-import * as settings from './settings.js';
+import { coverHTML, esc } from './ui.js';
 import { icon, hydrateIcons } from './icons.js';
 import { openAddBookModal } from './addbook.js';
 import { locked, openLockSettings } from './lock.js';
@@ -88,10 +87,6 @@ function renderToolbar() {
     `<button class="chip" data-genre="${esc(g)}" aria-pressed="${g === ui.genre}">${esc(g)}</button>`
   ).join('');
   requestAnimationFrame(() => syncGenreFade(box));
-
-  const mode = settings.get('covers');
-  document.querySelectorAll('#coversToggle .seg').forEach(b =>
-    b.setAttribute('aria-pressed', String(b.dataset.covers === mode)));
 }
 
 /* Полоса жанров прокручивается вбок, и понять это можно только по
@@ -102,28 +97,6 @@ function syncGenreFade(box = document.getElementById('genres')) {
   const max = box.scrollWidth - box.clientWidth;
   box.classList.toggle('can-left', box.scrollLeft > 2);
   box.classList.toggle('can-right', box.scrollLeft < max - 2);
-}
-
-/* Подсказка появляется только если настоящих обложек действительно не видно:
-   считаем те, что успели загрузиться, а не те, что прописаны в данных. */
-let hintToken = 0;
-
-function checkCoversHint() {
-  const hint = document.getElementById('coversHint');
-  const token = ++hintToken;
-
-  if (settings.get('covers') !== 'real') { hint.hidden = true; return; }
-
-  setTimeout(() => {
-    if (token !== hintToken) return;
-    const none = loadedCovers() === 0;
-    hint.hidden = !none;
-    if (none) {
-      hint.textContent = 'Фотографий настоящих обложек пока нет. Проверьте ISBN в поле '
-        + 'isbn в data/books.json или запустите tools/fetch-covers.mjs — '
-        + 'до тех пор показываем свои.';
-    }
-  }, 1600);
 }
 
 /* ── полка ────────────────────────────────────────────────────────────── */
@@ -376,9 +349,6 @@ export function renderShelf() {
     pileHTML(rest);
 
   hydrateIcons(shelf);
-  resetLoadedCovers();
-  mountCovers(shelf);
-  checkCoversHint();
 
   shelf.querySelectorAll('[data-id]').forEach(el => {
     el.addEventListener('click', () => {
@@ -491,13 +461,6 @@ export function initShelf(openBook) {
   lockBtn.hidden = !locked();
   lockBtn.addEventListener('click', openLockSettings);
 
-  document.getElementById('coversToggle').addEventListener('click', e => {
-    const b = e.target.closest('[data-covers]');
-    if (!b) return;
-    settings.set('covers', b.dataset.covers);
-    renderToolbar();
-    renderShelf();
-  });
 
   const genresBox = document.getElementById('genres');
   genresBox.addEventListener('scroll', () => syncGenreFade(), { passive: true });

@@ -2,7 +2,7 @@
    Открывается плавным перелётом обложки с полки (FLIP). */
 
 import { state, scoresFor, fmtDate, nPlural } from './data.js';
-import { coverHTML, mountCovers, whoHTML, esc, stagger } from './ui.js';
+import { coverHTML, whoHTML, esc, stagger } from './ui.js';
 import { gaugeHTML, radarHTML, rereadRingHTML, rankHTML, memberCardsHTML } from './charts.js';
 import { hydrateIcons } from './icons.js';
 import { mountTilt, tiltWrap } from './tilt.js';
@@ -114,7 +114,6 @@ function render(book) {
   </article>`;
 
   hydrateIcons(view);
-  mountCovers(view);
   mountTilt(view);
   view.querySelector('#showDraftJson')?.addEventListener('click', () => showBookJSON(book));
   view.querySelector('#shareBook')?.addEventListener('click', () => openShareModal(book));
@@ -133,7 +132,6 @@ function render(book) {
 /** Перерисовать карточку после правок — без перелёта обложки. */
 function rerender(book) {
   const view = render(book);
-  mountCovers(view);
   deps.onBookChanged?.(book);
   return view;
 }

@@ -91,7 +91,9 @@ function faceHTML(book) {
 function stackHTML(books) {
   const inner = books.map(b => {
     const art = artOf(b);
-    const th = 15 + Math.round(rnd(b.id, 't') * 12);
+    // Толщина лежащей книги: стопка из тонких плашек выглядела стопкой
+    // визиток, а не книг, — поэтому нижняя граница заметно выше.
+    const th = 24 + Math.round(rnd(b.id, 't') * 16);
     const w = Math.round(SHELF_H * (0.56 + rnd(b.id, 's') * 0.12));
     const shift = Math.round((rnd(b.id, 'x') - .5) * 14);
     return `<button class="bc-flat" data-id="${esc(b.id)}"

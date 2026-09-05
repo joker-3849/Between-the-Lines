@@ -4,7 +4,7 @@
  * data/books.json. Черновик живёт до перезагрузки страницы. */
 
 import { state, addDraftBook, freeBookId, num } from './data.js';
-import { avatarHTML, isbnCoverURL, esc,
+import { avatarHTML, esc,
          scorePickerHTML, rereadPickerHTML, wirePickers, readPicked, pickedMean } from './ui.js';
 import { randomArt, motifSVG } from './covers.js';
 import { icon, hydrateIcons } from './icons.js';
@@ -107,13 +107,9 @@ function formHTML() {
 
     <div class="field">
       <label for="nb-isbn">ISBN издания</label>
-      <div class="isbn-row">
-        <input id="nb-isbn" placeholder="9780000000000" inputmode="numeric" autocomplete="off">
-        <div class="isbn-preview" id="isbnPreview"><span class="ic" data-icon="photo"></span></div>
-      </div>
-      <p class="field-hint">По ISBN сайт попробует показать фотографию настоящего издания
-        с Open Library — но только в режиме «настоящие» на полке, и только когда сайт
-        открыт в обычном браузере: предпросмотр в артефакте Claude такие картинки не грузит.</p>
+      <input id="nb-isbn" placeholder="9780000000000" inputmode="numeric" autocomplete="off">
+      <p class="field-hint">Не обязателен: обложки у клуба свои, ISBN нужен только как
+        выходные данные конкретного издания.</p>
     </div>
 
     <div class="art-row">
@@ -165,26 +161,6 @@ function wireForm() {
     document.getElementById('artPreviewBox').innerHTML = artPreviewHTML();
     hydrateIcons(document.getElementById('artPreviewBox'));
     syncPreview();
-  });
-
-  const isbnInput = document.getElementById('nb-isbn');
-  const isbnPreview = document.getElementById('isbnPreview');
-  const showIsbnPlaceholder = () => {
-    isbnPreview.innerHTML = `<span class="ic" data-icon="photo"></span>`;
-    hydrateIcons(isbnPreview);
-  };
-  let isbnTimer;
-  isbnInput.addEventListener('input', () => {
-    clearTimeout(isbnTimer);
-    isbnTimer = setTimeout(() => {
-      const url = isbnCoverURL(isbnInput.value.trim());
-      if (!url) { showIsbnPlaceholder(); return; }
-      const img = document.createElement('img');
-      img.alt = '';
-      img.addEventListener('error', showIsbnPlaceholder, { once: true });
-      img.src = url;
-      isbnPreview.replaceChildren(img);
-    }, 400);
   });
 
   wirePickers(document.querySelector('.review-members'), memberId => {
@@ -281,8 +257,7 @@ function exportPanelHTML(book) {
   const json = JSON.stringify(stripDraft(book), null, 2);
   return `<p class="field-hint">Книга появилась на полке, но только на этой странице — сайт
     не пишет в файлы сам. Чтобы она осталась насовсем: скопируйте JSON ниже, вставьте
-    отдельным элементом массива в <code>data/books.json</code> и закоммитьте. Если вписан
-    ISBN, стоит один раз проверить обложку — <code>node tools/fetch-covers.mjs --verify</code>.</p>
+    отдельным элементом массива в <code>data/books.json</code> и закоммитьте.</p>
   <textarea class="export-json" id="exportJson" readonly spellcheck="false">${esc(json)}</textarea>
   <div class="modal-actions">
     <button type="button" class="btn btn-primary" id="exportCopy">${icon('copy')} Скопировать JSON</button>

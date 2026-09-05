@@ -9,7 +9,7 @@
  * на лету из выставленных критериев. */
 
 import { state, memberScore, num, dropBook } from './data.js';
-import { coverHTML, mountCovers, avatarHTML, esc,
+import { coverHTML, avatarHTML, esc,
          scorePickerHTML, rereadPickerHTML, wirePickers, readPicked, pickedMean } from './ui.js';
 import { icon, hydrateIcons } from './icons.js';
 import { showBookJSON } from './addbook.js';
@@ -134,7 +134,6 @@ function render() {
   </form>`;
 
   hydrateIcons(view);
-  mountCovers(view);
   wire(view);
   window.scrollTo({ top: 0, behavior: 'auto' });
   return view;

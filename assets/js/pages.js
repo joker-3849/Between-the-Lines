@@ -4,7 +4,7 @@ import {
   state, avg, spread, allLines, fmtDate, nPlural, plural, numPlural,
   memberMean, memberScore, yearOf, years, num
 } from './data.js';
-import { coverHTML, mountCovers, avatarHTML, whoHTML, esc } from './ui.js';
+import { coverHTML, avatarHTML, whoHTML, esc } from './ui.js';
 import { icon, hydrateIcons } from './icons.js';
 import { mountTilt, tiltWrap } from './tilt.js';
 
@@ -102,7 +102,6 @@ export function renderChronicle() {
   </div>`;
 
   hydrateIcons(view);
-  mountCovers(view);
   wireBookLinks(view);
 }
 
@@ -320,7 +319,6 @@ export function renderYear() {
   </div>`;
 
   hydrateIcons(view);
-  mountCovers(view);
   mountTilt(view);
   wireBookLinks(view);
 
