@@ -15,6 +15,10 @@ const FILES = {
 };
 
 let bar, note, btn;
+/* Сообщение «Сохранено» держится несколько секунд и гасит полосу. Если за
+   это время что-то поменяли снова, таймер надо снять — иначе он спрячет
+   кнопку уже под новыми правками. */
+let hideTimer;
 
 function label(files) {
   if (files.includes('books')) return 'Правки пока видны только в этой вкладке.';
@@ -23,13 +27,17 @@ function label(files) {
 
 function sync() {
   const files = dirtyFiles();
-  bar.hidden = !files.length || !canPublish();
-  if (!bar.hidden) {
-    note.textContent = label(files);
-    btn.disabled = false;
-    btn.innerHTML = `${icon('device-floppy')} Сохранить на сайт`;
-    hydrateIcons(btn);
-  }
+  const show = files.length > 0 && canPublish();
+  if (show) clearTimeout(hideTimer);
+  bar.hidden = !show;
+  if (!show) return;
+
+  bar.className = 'save-bar';
+  note.textContent = label(files);
+  btn.hidden = false;
+  btn.disabled = false;
+  btn.innerHTML = `${icon('device-floppy')} Сохранить на сайт`;
+  hydrateIcons(btn);
 }
 
 function state(text, kind = '') {
@@ -58,11 +66,15 @@ async function save() {
       files.map(f => ({ path: FILES[f].path, text: FILES[f].text() })),
       message
     );
-    clearDirty();
+    clearDirty();                 // sync() спрячет полосу, но сообщение важнее
     bar.hidden = false;
     state('Сохранено. Сайт пересоберётся за минуту-полторы.', 'ok');
     btn.hidden = true;
-    setTimeout(() => { bar.hidden = true; btn.hidden = false; bar.className = 'save-bar'; }, 6000);
+    hideTimer = setTimeout(() => {
+      bar.hidden = true;
+      btn.hidden = false;
+      bar.className = 'save-bar';
+    }, 6000);
   } catch (e) {
     state(e.message || 'Не вышло сохранить.', 'err');
     btn.disabled = false;

@@ -11,6 +11,7 @@ import { showBookJSON } from './addbook.js';
 import { openBookEditor } from './bookedit.js';
 import { openShareModal } from './share.js';
 import { requireUnlock, editorMode } from './lock.js';
+import { canPublish } from './publish.js';
 
 const reduced = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
@@ -41,13 +42,18 @@ function factsHTML(book) {
 /* Сайт читает полку из JSON в репозитории и сам в файлы не пишет, поэтому
    и новая книга, и правки существующей живут только в памяти страницы —
    баннер честно об этом говорит и отдаёт готовый JSON. */
+/* Пока правки не закоммичены, книга помечена — но следующий шаг разный:
+   с включённым сохранением это кнопка внизу, без него — копирование JSON. */
 function draftBannerHTML(book) {
   if (!book._draft && !book._edited) return '';
+  const what = book._draft
+    ? 'Книга есть только в этой вкладке'
+    : 'Правки есть только в этой вкладке';
   return `<div class="draft-banner">
     <span class="badge draft">${book._draft ? 'черновик' : 'изменено'}</span>
-    <span>${book._draft
-      ? 'Появилась только на этой странице — ещё не сохранена в data/books.json.'
-      : 'Правки видны только на этой странице — в data/books.json они ещё не попали.'}</span>
+    <span>${what}${canPublish()
+      ? ' — нажмите «Сохранить на сайт» внизу страницы.'
+      : '. Сохранение с сайта не включено: перенести их в data/books.json можно вручную либо включить сохранение в «Редактор» → «Фраза клуба».'}</span>
     <button type="button" class="link" id="showDraftJson">Показать JSON для вставки</button>
   </div>`;
 }
