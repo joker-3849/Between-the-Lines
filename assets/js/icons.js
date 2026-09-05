@@ -5,6 +5,7 @@ const PATHS = {
   'arrow-left':  '<path d="M5 12h14"/><path d="M5 12l6 6"/><path d="M5 12l6-6"/>',
   'arrow-right': '<path d="M5 12h14"/><path d="M13 18l6-6"/><path d="M13 6l6 6"/>',
   'lock':        '<rect x="5" y="11" width="14" height="10" rx="2"/><circle cx="12" cy="16" r="1"/><path d="M8 11V7a4 4 0 1 1 8 0v4"/>',
+  'lock-open':   '<rect x="5" y="11" width="14" height="10" rx="2"/><circle cx="12" cy="16" r="1"/><path d="M8 11V7a4 4 0 0 1 8 0"/>',
   'search':      '<circle cx="10" cy="10" r="7"/><path d="M21 21l-6-6"/>',
   'sort':        '<path d="M3 9l4-4 4 4"/><path d="M7 5v14"/><path d="M13 15l4 4 4-4"/><path d="M17 5v14"/>',
   'bookmark':    '<path d="M18 7v14l-6-4-6 4V7a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4z"/>',

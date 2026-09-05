@@ -10,7 +10,7 @@ import { coverOnShelf } from './shelf.js';
 import { showBookJSON } from './addbook.js';
 import { openBookEditor } from './bookedit.js';
 import { openShareModal } from './share.js';
-import { requireUnlock } from './lock.js';
+import { requireUnlock, editorMode } from './lock.js';
 
 const reduced = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
@@ -88,9 +88,9 @@ function render(book) {
         <button type="button" class="btn btn-ghost" id="shareBook">
           <span class="ic" data-icon="share"></span> Поделиться
         </button>
-        <button type="button" class="btn btn-ghost" id="editBook">
+        ${editorMode() ? `<button type="button" class="btn btn-ghost" id="editBook">
           <span class="ic" data-icon="pencil"></span> Внести изменения
-        </button>
+        </button>` : ''}
       </div>
     </div>
     <div class="bp-right">
@@ -127,6 +127,12 @@ function render(book) {
     });
   });
   return view;
+}
+
+/** Перерисовать открытую карточку на месте: без перелёта и без прокрутки. */
+export function refreshBook() {
+  const book = current && state.bookById.get(current);
+  if (book) rerender(book);
 }
 
 /** Перерисовать карточку после правок — без перелёта обложки. */

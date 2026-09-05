@@ -1,13 +1,14 @@
 /* Точка входа: загрузка данных, переключение разделов, состояние шапки. */
 
 import { loadData, onDirtyChange } from './data.js';
-import { hydrateIcons } from './icons.js';
+import { icon, hydrateIcons } from './icons.js';
 import { initShelf, refreshShelf } from './shelf.js';
-import { initBook, showBook, closeBook, currentBookId } from './book.js';
+import { initBook, showBook, closeBook, currentBookId, refreshBook } from './book.js';
 import { initPages, renderLines, renderChronicle, renderYear } from './pages.js';
 import { initAddBook } from './addbook.js';
 import { isEditing, confirmLeaveEditor } from './bookedit.js';
 import { initSaveBar, syncSaveBar } from './savebar.js';
+import { locked, editorMode, requireUnlock, openLockSettings, onEditorChange } from './lock.js';
 
 const RENDERERS = {
   lines: renderLines,
@@ -57,6 +58,40 @@ function goto(name) {
   }
 }
 
+/* Кнопка «Редактор» — единственная дверь к правкам. Пока в неё не вошли,
+   сайт остаётся обычной страницей: ни «Добавить книгу», ни «Внести
+   изменения» не показываются. Внутри режима та же кнопка ведёт в настройки
+   фразы, где есть и выход. */
+function initEditorButton() {
+  const btn = document.getElementById('editorBtn');
+  // Замка нет вовсе (в club.json нет editPass) — и разделять нечего.
+  btn.hidden = !locked();
+
+  const sync = () => {
+    const on = editorMode();
+    btn.setAttribute('aria-pressed', String(on));
+    // Замок открыт, когда режим включён: состояние видно и без цвета.
+    btn.querySelector('.ic').outerHTML = icon(on ? 'lock-open' : 'lock');
+    btn.title = on
+      ? 'Режим редактора включён — фраза, сохранение, выход'
+      : 'Войти в режим редактора';
+  };
+
+  btn.addEventListener('click', async () => {
+    if (editorMode()) { openLockSettings(); return; }
+    await requireUnlock();
+  });
+
+  onEditorChange(() => {
+    sync();
+    // На открытой карточке появляется или пропадает «Внести изменения»;
+    // перерисовка карточки сама обновляет и полку под ней.
+    if (currentBookId()) refreshBook();
+    else refreshShelf();
+  });
+  sync();
+}
+
 function fail(message) {
   document.getElementById('app').innerHTML =
     `<p class="shelf-empty" style="max-width:56ch;margin:14vh auto">${message}</p>`;
@@ -91,6 +126,7 @@ function fail(message) {
 
   initSaveBar();
   onDirtyChange(syncSaveBar);
+  initEditorButton();
 
   document.getElementById('mainnav').addEventListener('click', e => {
     const b = e.target.closest('[data-view]');

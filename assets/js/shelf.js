@@ -5,7 +5,7 @@ import { state, avg, spread, genres, fmtDate, nPlural, nextMeeting, num } from '
 import { coverHTML, esc } from './ui.js';
 import { icon, hydrateIcons } from './icons.js';
 import { openAddBookModal } from './addbook.js';
-import { locked, openLockSettings } from './lock.js';
+import { editorMode } from './lock.js';
 import { bookcaseHTML } from './bookcase.js';
 
 const FACE_OUT = 7;          // сколько книг стоят лицом, прежде чем начнётся стопка
@@ -87,6 +87,9 @@ function renderToolbar() {
     `<button class="chip" data-genre="${esc(g)}" aria-pressed="${g === ui.genre}">${esc(g)}</button>`
   ).join('');
   requestAnimationFrame(() => syncGenreFade(box));
+
+  // Без режима редактора полка только для чтения — кнопки добавления нет.
+  document.getElementById('addBookBtn').hidden = !editorMode();
 }
 
 /* Полоса жанров прокручивается вбок, и понять это можно только по
@@ -455,11 +458,6 @@ export function initShelf(openBook) {
   });
 
   document.getElementById('addBookBtn').addEventListener('click', openAddBookModal);
-
-  // Кнопки замка нет, когда в club.json нет editPass: менять нечего.
-  const lockBtn = document.getElementById('lockBtn');
-  lockBtn.hidden = !locked();
-  lockBtn.addEventListener('click', openLockSettings);
 
 
   const genresBox = document.getElementById('genres');

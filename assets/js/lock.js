@@ -51,10 +51,23 @@ export function unlocked() {
   try { return localStorage.getItem(KEY) === passHash(); } catch { return false; }
 }
 
-/** Забыть фразу — полка снова спросит её при следующей правке. */
+/* Режим редактора — то же самое, что открытая щеколда, но названное так,
+   как это выглядит для читателя: без него сайт обычная страница для чтения,
+   с ним появляются «Добавить книгу», «Внести изменения» и сохранение. */
+export const editorMode = () => unlocked();
+
+const watchers = new Set();
+
+/** Подписка на вход и выход из режима редактора. */
+export function onEditorChange(fn) { watchers.add(fn); }
+
+function notify() { watchers.forEach(fn => fn(editorMode())); }
+
+/** Выйти из редактора: фраза забывается, сайт снова только для чтения. */
 export function forget() {
   phrase = null;
   try { localStorage.removeItem(KEY); } catch { /* приватный режим */ }
+  notify();
 }
 
 /**
@@ -68,10 +81,11 @@ export function requireUnlock({ needPhrase = false } = {}) {
   if (unlocked() && (!needPhrase || phrase)) return Promise.resolve(true);
 
   return new Promise(resolve => {
-    const body = openModal('Правка полки', `
+    const body = openModal('Вход в редактор', `
       <form id="lockForm" novalidate>
         <p class="field-hint" style="margin:-4px 0 16px">
-          Добавлять и менять книги может тот, кто знает фразу клуба.
+          Назовите фразу клуба — и появятся «Добавить книгу», правка карточек
+          и сохранение. Без неё сайт остаётся обычной страницей для чтения.
         </p>
         <div class="field">
           <label for="lockPass">Фраза</label>
@@ -80,7 +94,7 @@ export function requireUnlock({ needPhrase = false } = {}) {
           <p class="field-hint" id="lockError" hidden>Не подходит. Попробуйте ещё раз.</p>
         </div>
         <div class="modal-actions">
-          <button type="submit" class="btn btn-primary">${icon('check')} Открыть</button>
+          <button type="submit" class="btn btn-primary">${icon('check')} Войти</button>
           <button type="button" class="btn btn-ghost" id="lockCancel">Отмена</button>
           <button type="button" class="link" id="lockChange">Сменить фразу</button>
         </div>
@@ -115,6 +129,7 @@ export function requireUnlock({ needPhrase = false } = {}) {
       }
       phrase = input.value;
       latch(passHash());
+      notify();
       closeModal();
       finish(true);
     });
@@ -166,7 +181,7 @@ export function openLockSettings() {
       <div class="modal-actions">
         <button type="submit" class="btn btn-primary">${icon('check')} Сменить фразу</button>
         <button type="button" class="btn btn-ghost" id="passClose">Отмена</button>
-        ${unlocked() ? `<button type="button" class="link" id="passForget">Забыть фразу на этом устройстве</button>` : ''}
+        ${unlocked() ? `<button type="button" class="link" id="passForget">Выйти из редактора</button>` : ''}
       </div>
     </form>
     ${publishSectionHTML()}
@@ -218,6 +233,7 @@ export function openLockSettings() {
     state.club.editPass = newHash;
     phrase = next;
     latch(newHash);
+    notify();
     markDirty('club');
     showPassJSON(newHash);
   });

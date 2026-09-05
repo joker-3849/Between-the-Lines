@@ -21,12 +21,18 @@
     <span class="ic" data-icon="arrow-left"></span><span>На полку</span>
   </button>
   <a class="wordmark" href="#" data-view="shelf">Between<span class="wm-the"> the </span>Lines</a>
-  <nav class="mainnav" id="mainnav" aria-label="Разделы">
-    <button data-view="shelf" class="navlink is-active">Полка</button>
-    <button data-view="lines" class="navlink">Между строк</button>
-    <button data-view="chronicle" class="navlink">Хроника</button>
-    <button data-view="year" class="navlink">Итоги года</button>
-  </nav>
+  <div class="topbar-right">
+    <nav class="mainnav" id="mainnav" aria-label="Разделы">
+      <button data-view="shelf" class="navlink is-active">Полка</button>
+      <button data-view="lines" class="navlink">Между строк</button>
+      <button data-view="chronicle" class="navlink">Хроника</button>
+      <button data-view="year" class="navlink">Итоги года</button>
+    </nav>
+    <button type="button" class="editor-btn" id="editorBtn" hidden
+      aria-pressed="false" aria-haspopup="dialog">
+      <span class="ic" data-icon="lock"></span><span class="editor-btn-label">Редактор</span>
+    </button>
+  </div>
 </header>
 
 <main id="app">
@@ -69,10 +75,6 @@
           <option value="title-asc">⇅ По алфавиту</option>
         </select>
       </div>
-      <button type="button" class="tb-lock" id="lockBtn" hidden
-        title="Фраза клуба" aria-label="Фраза клуба" aria-haspopup="dialog">
-        <span class="ic" data-icon="lock"></span>
-      </button>
       <button type="button" class="btn btn-primary tb-add" id="addBookBtn" aria-haspopup="dialog">
         <span class="ic" data-icon="plus"></span><span class="tb-add-label">Добавить книгу</span>
       </button>

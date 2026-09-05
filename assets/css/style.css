@@ -122,8 +122,10 @@ img{max-width:100%;display:block}
 /* grid-area держит колонку за кнопкой, даже когда её нет, — иначе меню
    переезжает в первую колонку и вордмарк снова уходит с центра. */
 .topbar-back[hidden]{display:none}
-.mainnav{grid-column:3;justify-self:end}
-
+.topbar-right{
+  grid-column:3;justify-self:end;
+  display:flex;align-items:center;gap:clamp(6px,1vw,14px);
+}
 .mainnav{display:flex;gap:4px;flex-wrap:wrap;justify-content:flex-end}
 .navlink{
   font-size:13px;letter-spacing:.02em;color:var(--faint);
@@ -133,6 +135,23 @@ img{max-width:100%;display:block}
 }
 .navlink:hover{color:var(--ink)}
 .navlink.is-active{color:var(--ink);background:var(--raise-2)}
+
+/* Вход в редактор. Отделён от разделов рамкой: это не ещё одна страница, а
+   переключение режима — без него сайт просто читают. */
+.editor-btn{
+  display:inline-flex;align-items:center;gap:7px;flex:0 0 auto;
+  font-size:13px;letter-spacing:.02em;color:var(--faint);
+  padding:5px 13px;border:1px solid var(--rule);border-radius:999px;
+  transition:color .2s var(--ease),border-color .2s var(--ease),background .2s var(--ease);
+  white-space:nowrap;
+}
+.editor-btn:hover{color:var(--ink);border-color:var(--ghost)}
+.editor-btn[hidden]{display:none}
+.editor-btn .ic{width:14px;height:14px}
+/* В режиме редактора кнопка становится состоянием, а не приглашением. */
+.editor-btn[aria-pressed="true"]{
+  color:var(--gold);border-color:rgba(101,14,20,.32);background:rgba(101,14,20,.06);
+}
 
 /* ── виды ─────────────────────────────────────────────────────────────── */
 /* main тоже тянется: без этого body min-height:100dvh просто оставлял бы
@@ -287,20 +306,6 @@ img{max-width:100%;display:block}
 }
 .tb-sort select:hover{color:var(--ink)}
 .tb-sort option{background:var(--void-2);color:var(--ink)}
-
-/* Замок — небольшой кружок рядом с «Добавить книгу»: одна редкая кнопка
-   не должна перетягивать на себя строку с поиском и сортировкой. */
-.tb-lock{
-  flex:0 0 auto;
-  display:inline-flex;align-items:center;justify-content:center;
-  width:var(--ctl-h);height:var(--ctl-h);
-  border:1px solid var(--rule);border-radius:50%;
-  color:var(--faint);
-  transition:color .2s var(--ease),border-color .2s var(--ease);
-}
-.tb-lock:hover{color:var(--ink);border-color:var(--ghost)}
-.tb-lock[hidden]{display:none}
-.tb-lock .ic{width:16px;height:16px}
 
 /* ── полка ────────────────────────────────────────────────────────────── */
 .shelf-wrap{
@@ -968,6 +973,8 @@ img{max-width:100%;display:block}
 @media (max-width:620px){
   .mainnav{gap:0}
   .navlink{padding:6px 9px;font-size:12px}
+  .editor-btn{padding:5px 9px}
+  .editor-btn-label{display:none}
   .imp{grid-template-columns:1fr;gap:10px}
   .yr-bar{grid-template-columns:96px 1fr 30px}
 }
@@ -1159,6 +1166,9 @@ input[type="number"]{-moz-appearance:textfield}
   transition:opacity .2s var(--ease),border-color .2s var(--ease),color .2s var(--ease),background .2s var(--ease);
   white-space:nowrap;
 }
+/* display у .btn перебивает [hidden] из стилей браузера: авторское правило
+   сильнее пользовательского независимо от специфичности. */
+.btn[hidden]{display:none}
 .btn .ic{width:16px;height:16px}
 .btn-primary{background:var(--ink);color:var(--void);border:1px solid var(--ink)}
 .btn-primary:hover{opacity:.86}
