@@ -52,9 +52,9 @@ function draftBannerHTML(book) {
   return `<div class="draft-banner">
     <span class="badge draft">${book._draft ? 'черновик' : 'изменено'}</span>
     <span>${what}${canPublish()
-      ? ' — нажмите «Сохранить на сайт» внизу страницы.'
+      ? ' — сохранение в репозиторий идёт, полоса внизу покажет результат.'
       : '. Сохранение с сайта не включено: перенести их в data/books.json можно вручную либо включить сохранение в «Редактор» → «Фраза клуба».'}</span>
-    <button type="button" class="link" id="showDraftJson">Показать JSON для вставки</button>
+    ${canPublish() ? '' : `<button type="button" class="link" id="showDraftJson">Показать JSON для вставки</button>`}
   </div>`;
 }
 

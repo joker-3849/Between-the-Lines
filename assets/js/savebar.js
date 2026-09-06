@@ -1,12 +1,16 @@
-/* Полоса «Сохранить на сайт»: появляется, когда в памяти вкладки есть
- * правки, которых нет в репозитории, и исчезает после коммита.
+/* Сохранение правок в репозиторий и полоса, которая показывает, как оно идёт.
  *
- * Полоса нужна именно плавающая: сохранять хочется и с полки, и со страницы
- * книги сразу после правки, а панель с фильтрами живёт только на полке. */
+ * Когда сохранение настроено (в club.json есть publish), никакой отдельной
+ * кнопки «сохранить ещё раз» нет: правка, добавление или удаление книги сами
+ * уходят коммитом. Полоса внизу — это отчёт о происходящем, а кнопка на ней
+ * появляется только чтобы повторить после неудачи.
+ *
+ * Полоса плавающая, а не встроена в панель полки: сохранять приходится и со
+ * страницы книги сразу после правки, где панели с фильтрами нет. */
 
 import { dirtyFiles, clearDirty } from './data.js';
 import { canPublish, publishFiles, booksJSON, clubJSON } from './publish.js';
-import { requireUnlock, currentPhrase } from './lock.js';
+import { requireUnlock, currentPhrase, forgetPhrase } from './lock.js';
 import { icon, hydrateIcons } from './icons.js';
 
 const FILES = {
@@ -14,73 +18,92 @@ const FILES = {
   club: { path: 'data/club.json', text: clubJSON }
 };
 
-let bar, note, btn;
-/* Сообщение «Сохранено» держится несколько секунд и гасит полосу. Если за
-   это время что-то поменяли снова, таймер надо снять — иначе он спрячет
-   кнопку уже под новыми правками. */
-let hideTimer;
+/* Коммит начинается не мгновенно: одно действие пользователя иногда метит
+   изменённым и books, и club, и ждать четверть секунды дешевле, чем слать
+   два коммита подряд. */
+const DEBOUNCE = 350;
 
-function label(files) {
-  if (files.includes('books')) return 'Правки пока видны только в этой вкладке.';
-  return 'Новая фраза клуба пока действует только в этой вкладке.';
+let bar, note, btn;
+let saving = false;
+let startTimer, hideTimer;
+
+function message(files) {
+  const what = files.includes('books') ? 'Правки' : 'Новая фраза клуба';
+  return `${what} уходят в репозиторий…`;
 }
 
-function sync() {
-  const files = dirtyFiles();
-  const show = files.length > 0 && canPublish();
-  if (show) clearTimeout(hideTimer);
-  bar.hidden = !show;
-  if (!show) return;
+function show(text, kind = '') {
+  clearTimeout(hideTimer);
+  bar.hidden = false;
+  bar.className = `save-bar ${kind}`.trim();
+  note.textContent = text;
+}
 
-  bar.className = 'save-bar';
-  note.textContent = label(files);
+function hideSoon() {
+  hideTimer = setTimeout(() => {
+    bar.hidden = true;
+    bar.className = 'save-bar';
+    btn.hidden = true;
+  }, 5000);
+}
+
+function retryButton() {
   btn.hidden = false;
   btn.disabled = false;
-  btn.innerHTML = `${icon('device-floppy')} Сохранить на сайт`;
+  btn.innerHTML = `${icon('refresh')} Повторить`;
   hydrateIcons(btn);
 }
 
-function state(text, kind = '') {
-  note.textContent = text;
-  bar.className = `save-bar ${kind}`.trim();
-}
-
+/** Отправить всё, что разошлось с репозиторием. */
 async function save() {
+  if (saving) return;
   const files = dirtyFiles();
-  if (!files.length) return;
+  if (!files.length || !canPublish()) return;
 
-  if (!await requireUnlock({ needPhrase: true })) return;
-
-  btn.disabled = true;
-  btn.innerHTML = `${icon('refresh')} Сохраняю…`;
-  hydrateIcons(btn);
-  state('Коммит в репозиторий…');
-
-  const message = files.includes('books') && files.includes('club')
-    ? 'Полка и настройки клуба с сайта'
-    : files.includes('club') ? 'Фраза клуба с сайта' : 'Полка с сайта';
+  saving = true;
+  btn.hidden = true;
+  show(message(files));
 
   try {
+    // Фразы может не быть — например, вкладку открыли заново, а щеколда
+    // осталась открытой с прошлого раза. Тогда спросим её один раз.
+    if (!await requireUnlock({ needPhrase: true })) {
+      show('Без фразы сохранить нельзя.', 'err');
+      retryButton();
+      return;
+    }
+
     await publishFiles(
       currentPhrase(),
       files.map(f => ({ path: FILES[f].path, text: FILES[f].text() })),
-      message
+      files.includes('books') ? 'Полка с сайта' : 'Фраза клуба с сайта'
     );
-    clearDirty();                 // sync() спрячет полосу, но сообщение важнее
-    bar.hidden = false;
-    state('Сохранено. Сайт пересоберётся за минуту-полторы.', 'ok');
+
+    clearDirty();
+    show('Сохранено. Сайт пересоберётся за минуту-полторы.', 'ok');
     btn.hidden = true;
-    hideTimer = setTimeout(() => {
-      bar.hidden = true;
-      btn.hidden = false;
-      bar.className = 'save-bar';
-    }, 6000);
+    hideSoon();
   } catch (e) {
-    state(e.message || 'Не вышло сохранить.', 'err');
-    btn.disabled = false;
-    btn.innerHTML = `${icon('refresh')} Повторить`;
-    hydrateIcons(btn);
+    // Фраза разошлась с токеном (её сменили в другой вкладке) — спросим заново.
+    if (e.kind === 'phrase') forgetPhrase();
+    show(e.message || 'Не вышло сохранить.', 'err');
+    retryButton();
+  } finally {
+    saving = false;
   }
+}
+
+/* Каждое изменение состояния запускает отсчёт до коммита. Пока сохранение не
+   настроено, полосы нет вовсе: правки переносят вручную через «Показать JSON». */
+function sync() {
+  const files = dirtyFiles();
+  if (!files.length || !canPublish()) return;
+  if (saving) return;
+
+  show(message(files));
+  btn.hidden = true;
+  clearTimeout(startTimer);
+  startTimer = setTimeout(save, DEBOUNCE);
 }
 
 export function initSaveBar() {
@@ -89,7 +112,6 @@ export function initSaveBar() {
   btn = document.getElementById('saveBarBtn');
   if (!bar) return;
   btn.addEventListener('click', save);
-  sync();
 }
 
 export function syncSaveBar() { if (bar) sync(); }

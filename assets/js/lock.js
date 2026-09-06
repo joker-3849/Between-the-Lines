@@ -18,13 +18,30 @@ import { icon, hydrateIcons } from './icons.js';
 
 const KEY = 'btl.unlocked';
 
-/* Сама фраза живёт только в памяти вкладки и только пока вкладка открыта:
-   в localStorage лежит её хеш, по которому фразу не восстановить. Нужна она
-   для сохранения на сайт — там из неё выводится ключ к токену. */
-let phrase = null;
+/* Сама фраза нужна для сохранения на сайт: из неё выводится ключ к токену.
+   Держим её в sessionStorage — переживает перезагрузку вкладки, но исчезает,
+   когда вкладку закрыли. На диск в открытом виде она так не ложится, а
+   спрашивать её после каждого F5 не приходится. В localStorage по-прежнему
+   только хеш, по которому фразу не восстановить. */
+const PKEY = 'btl.phrase';
+
+let phrase = (() => {
+  try { return sessionStorage.getItem(PKEY); } catch { return null; }
+})();
+
+function keepPhrase(value) {
+  phrase = value;
+  try {
+    if (value) sessionStorage.setItem(PKEY, value);
+    else sessionStorage.removeItem(PKEY);
+  } catch { /* приватный режим */ }
+}
 
 /** Фраза, если её вводили в этой вкладке. */
 export function currentPhrase() { return phrase; }
+
+/** Забыть фразу, не выходя из редактора: она разошлась с токеном. */
+export function forgetPhrase() { keepPhrase(null); }
 
 async function sha256(text) {
   // crypto.subtle есть только в защищённом контексте: https или localhost.
@@ -65,7 +82,7 @@ function notify() { watchers.forEach(fn => fn(editorMode())); }
 
 /** Выйти из редактора: фраза забывается, сайт снова только для чтения. */
 export function forget() {
-  phrase = null;
+  keepPhrase(null);
   try { localStorage.removeItem(KEY); } catch { /* приватный режим */ }
   notify();
 }
@@ -127,7 +144,7 @@ export function requireUnlock({ needPhrase = false } = {}) {
         input.select();
         return;
       }
-      phrase = input.value;
+      keepPhrase(input.value);
       latch(passHash());
       notify();
       closeModal();
@@ -231,7 +248,7 @@ export function openLockSettings() {
 
     // В этой вкладке фраза уже новая; в репозитории — только после коммита.
     state.club.editPass = newHash;
-    phrase = next;
+    keepPhrase(next);
     latch(newHash);
     notify();
     markDirty('club');
@@ -280,8 +297,8 @@ function showPassJSON(hash) {
 
 function publishSectionHTML() {
   const on = canPublish();
-  return `<div class="pass-publish">
-    <h3>Сохранение на сайт</h3>
+  return `<details class="pass-publish">
+    <summary>Сохранение на сайт${on ? ' — включено' : ''}</summary>
     ${on
       ? `<p class="field-hint">Включено: репозиторий
            <code>${esc(state.club.publish.repo)}</code>. Кнопка «Сохранить на сайт»
@@ -319,7 +336,7 @@ function publishSectionHTML() {
         ${on ? `<button type="button" class="link" id="pubOff">Выключить сохранение</button>` : ''}
       </div>
     </form>
-  </div>`;
+  </details>`;
 }
 
 /** Владелец и репозиторий из адреса GitHub Pages, если сайт открыт оттуда. */
@@ -364,7 +381,7 @@ function wirePublishSection(body) {
     }
 
     state.club.publish = await encryptToken(pass, token, repo, branch);
-    phrase = pass;                 // сохранять можно сразу, не спрашивая заново
+    keepPhrase(pass);              // сохранять можно сразу, не спрашивая заново
     markDirty('club');
     showPublishOn();
   });
