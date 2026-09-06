@@ -84,6 +84,25 @@ class PublishError extends Error {
   constructor(kind, message) { super(message); this.kind = kind; }
 }
 
+/* GitHub объясняет отказ лучше, чем можно угадать по коду ответа, — его
+   формулировку показываем рядом со своей. */
+async function reason(res) {
+  try {
+    const { message } = await res.json();
+    return message ? ` GitHub: «${message}».` : '';
+  } catch { return ''; }
+}
+
+/* Репозиторий у клуба публичный, поэтому читать его может любой токен, даже
+   вовсе без прав на запись, — 403 приходит только на попытке записи. Самая
+   частая причина: при создании fine-grained токена осталось значение по
+   умолчанию «Public Repositories (read-only)» либо Contents выставлен в
+   Read-only. У классического токена та же беда без галочки repo. */
+const NO_WRITE = repo =>
+  `Токен читает ${repo}, но писать в него не может. Проверьте у токена: `
+  + `Repository access — Only select repositories и в списке ${repo}; `
+  + `Permissions → Repository permissions → Contents: Read and write.`;
+
 const headers = token => ({
   Authorization: `Bearer ${token}`,
   Accept: 'application/vnd.github+json',
@@ -97,9 +116,11 @@ async function shaOf(token, path) {
   const res = await fetch(`${API}/repos/${repo}/contents/${path}${q}`, { headers: headers(token) });
 
   if (res.status === 404) return undefined;          // файла ещё нет — создадим
-  if (res.status === 401) throw new PublishError('auth', 'Токен не принят.');
-  if (res.status === 403) throw new PublishError('auth', 'Токену не хватает прав на этот репозиторий.');
-  if (!res.ok) throw new PublishError('net', `GitHub ответил ${res.status}.`);
+  if (res.status === 401) {
+    throw new PublishError('auth', 'GitHub не принял токен: он неверный или отозван.' + await reason(res));
+  }
+  if (res.status === 403) throw new PublishError('auth', NO_WRITE(repo) + await reason(res));
+  if (!res.ok) throw new PublishError('net', `GitHub ответил ${res.status}.` + await reason(res));
   return (await res.json()).sha;
 }
 
@@ -143,14 +164,45 @@ export async function publishFiles(phrase, files, message) {
       res = await putFile(token, path, text, message, sha);
     }
 
-    if (res.status === 401 || res.status === 403) {
-      throw new PublishError('auth', 'Токен не принят — возможно, истёк срок его действия.');
+    if (res.status === 401) {
+      throw new PublishError('auth',
+        'GitHub не принял токен: он неверный, отозван или истёк.' + await reason(res));
+    }
+    if (res.status === 403) {
+      throw new PublishError('auth', NO_WRITE(cfg().repo) + await reason(res));
     }
     if (res.status === 409 || res.status === 422) {
       throw new PublishError('conflict', `Файл ${path} кто-то поменял только что. Обновите страницу и повторите.`);
     }
     if (!res.ok) {
-      throw new PublishError('net', `GitHub ответил ${res.status} на запись ${path}.`);
+      throw new PublishError('net',
+        `GitHub ответил ${res.status} на запись ${path}.` + await reason(res));
     }
   }
+}
+
+/**
+ * Проверяет токен до того, как его зашифруют и положат в репозиторий:
+ * иначе о нехватке прав узнаёшь только при первой правке, а выглядит это
+ * как поломка сайта. Ничего не пишет — только читает описание репозитория.
+ */
+export async function checkToken(token, repo) {
+  let res;
+  try {
+    res = await fetch(`${API}/repos/${repo}`, { headers: headers(token) });
+  } catch {
+    throw new PublishError('net', 'Не вышло достучаться до api.github.com.');
+  }
+  if (res.status === 401) {
+    throw new PublishError('auth', 'GitHub не принял токен: он неверный или отозван.' + await reason(res));
+  }
+  if (res.status === 404) {
+    throw new PublishError('auth',
+      `Репозиторий ${repo} токену не виден. Проверьте написание и то, что он выбран `
+      + 'в Repository access у токена.');
+  }
+  if (!res.ok) throw new PublishError('net', `GitHub ответил ${res.status}.` + await reason(res));
+
+  const info = await res.json();
+  if (info.permissions && !info.permissions.push) throw new PublishError('auth', NO_WRITE(repo));
 }

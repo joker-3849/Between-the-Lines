@@ -12,7 +12,7 @@
 
 import { state, markDirty } from './data.js';
 import { esc } from './ui.js';
-import { canPublish, decryptToken, encryptToken } from './publish.js';
+import { canPublish, checkToken, decryptToken, encryptToken } from './publish.js';
 import { openModal, closeModal } from './modal.js';
 import { icon, hydrateIcons } from './icons.js';
 
@@ -378,6 +378,22 @@ function wirePublishSection(body) {
     if (hash !== passHash()) {
       body.querySelector('#passOld').focus();
       return fail('Сначала введите текущую фразу в поле выше — ею и шифруется токен.');
+    }
+
+    // Проверяем права до шифрования: токен без записи выглядел бы рабочим
+    // ровно до первой правки, а ошибка вылезла бы уже у участницы.
+    const btn = form.querySelector('button[type=submit]');
+    const wasLabel = btn.innerHTML;
+    btn.disabled = true;
+    btn.textContent = 'Проверяю токен…';
+    try {
+      await checkToken(token, repo);
+    } catch (err) {
+      return fail(err.message);
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = wasLabel;
+      hydrateIcons(btn);
     }
 
     state.club.publish = await encryptToken(pass, token, repo, branch);
