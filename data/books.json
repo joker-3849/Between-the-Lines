@@ -789,5 +789,26 @@
         "quote": null
       }
     }
+  },
+  {
+    "id": "testovaya-kniga-2",
+    "title": "Тестовая книга 2",
+    "author": "Тестовая книга 2",
+    "year": null,
+    "pages": null,
+    "genre": "Детектив",
+    "edition": "",
+    "art": {
+      "bg": "#24141a",
+      "fg": "#f3e3e2",
+      "acc": "#c15d5d",
+      "motif": "rain"
+    },
+    "discussed": "2026-09-06",
+    "proposedBy": null,
+    "coverQuery": "Тестовая книга 2 Тестовая книга 2",
+    "cover": null,
+    "isbn": null,
+    "reviews": {}
   }
 ]
