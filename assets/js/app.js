@@ -1,6 +1,6 @@
 /* Точка входа: загрузка данных, переключение разделов, состояние шапки. */
 
-import { loadData, onDirtyChange } from './data.js';
+import { state, loadData, onDirtyChange } from './data.js';
 import { icon, hydrateIcons } from './icons.js';
 import { initShelf, refreshShelf } from './shelf.js';
 import { initBook, showBook, closeBook, currentBookId, refreshBook } from './book.js';
@@ -8,6 +8,7 @@ import { initPages, renderLines, renderChronicle, renderYear } from './pages.js'
 import { initAddBook } from './addbook.js';
 import { isEditing, confirmLeaveEditor } from './bookedit.js';
 import { initSaveBar, syncSaveBar } from './savebar.js';
+import { initLive } from './live.js';
 import { locked, editorMode, requireUnlock, openLockSettings, onEditorChange } from './lock.js';
 
 const RENDERERS = {
@@ -92,6 +93,16 @@ function initEditorButton() {
   sync();
 }
 
+/* Полка меняется сама — без этой строчки это выглядело бы как сбой. */
+let noticeTimer;
+function liveNotice() {
+  const bar = document.getElementById('liveBar');
+  if (!bar) return;
+  bar.hidden = false;
+  clearTimeout(noticeTimer);
+  noticeTimer = setTimeout(() => { bar.hidden = true; }, 5000);
+}
+
 function fail(message) {
   document.getElementById('app').innerHTML =
     `<p class="shelf-empty" style="max-width:56ch;margin:14vh auto">${message}</p>`;
@@ -127,6 +138,15 @@ function fail(message) {
   initSaveBar();
   onDirtyChange(syncSaveBar);
   initEditorButton();
+
+  // Чужие правки прилетают коммитом, поэтому полка изредка перечитывает файл
+  // и обновляется на месте. Открытую карточку тоже: книгу могли поправить.
+  initLive(() => {
+    if (currentBookId() && state.bookById.has(currentBookId())) refreshBook();
+    else if (currentBookId()) closeBook('shelf');   // книгу удалили у нас из-под рук
+    else refreshShelf();
+    liveNotice();
+  });
 
   document.getElementById('mainnav').addEventListener('click', e => {
     const b = e.target.closest('[data-view]');

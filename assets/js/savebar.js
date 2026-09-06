@@ -8,10 +8,11 @@
  * Полоса плавающая, а не встроена в панель полки: сохранять приходится и со
  * страницы книги сразу после правки, где панели с фильтрами нет. */
 
-import { dirtyFiles, clearDirty } from './data.js';
+import { state, dirtyFiles, clearDirty } from './data.js';
 import { canPublish, publishFiles, booksJSON, clubJSON } from './publish.js';
 import { requireUnlock, currentPhrase, forgetPhrase } from './lock.js';
 import { icon, hydrateIcons } from './icons.js';
+import { expectPublished } from './live.js';
 
 const FILES = {
   books: { path: 'data/books.json', text: booksJSON },
@@ -80,6 +81,9 @@ async function save() {
     );
 
     clearDirty();
+    // Pages ещё минуту отдаёт старый файл: пусть автообновление знает, чего
+    // ждать, и не подсунет нам обратно полку без только что добавленной книги.
+    if (files.includes('books')) expectPublished(state.books.map(({ _draft, _edited, ...b }) => b));
     show('Сохранено. Сайт пересоберётся за минуту-полторы.', 'ok');
     btn.hidden = true;
     hideSoon();

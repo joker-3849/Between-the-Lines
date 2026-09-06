@@ -902,6 +902,9 @@ img{max-width:100%;display:block}
   .save-bar{gap:10px;padding:10px 12px;font-size:12px;text-align:center}
 }
 
+/* Та же полоса, но без кнопки: она ничего не просит, только объясняет. */
+.live-bar{padding:10px 20px;z-index:110}
+
 /* ── FLIP-слой ────────────────────────────────────────────────────────── */
 .flip-layer{position:fixed;inset:0;z-index:150;pointer-events:none}
 .flip-ghost{

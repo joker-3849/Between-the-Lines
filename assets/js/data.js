@@ -10,14 +10,23 @@ export const state = {
   bookById: new Map()
 };
 
+/* no-store обязателен: GitHub Pages отдаёт файлы с длинным max-age, браузер
+   держит их в кеше, и после правки полка ещё десять минут показывала старое
+   даже при обычной перезагрузке — помогал только сброс кеша. */
+export const fetchJSON = path =>
+  fetch(path, { cache: 'no-store' }).then(r => {
+    if (!r.ok) throw new Error(`${path}: ${r.status}`);
+    return r.json();
+  });
+
 export async function loadData() {
   // Одностраничная сборка кладёт данные прямо в страницу, обычная — читает файлы.
   const inline = globalThis.__BTL_DATA__;
   const [club, books] = inline
     ? [inline.club, inline.books]
     : await Promise.all([
-        fetch('data/club.json').then(r => r.json()),
-        fetch('data/books.json').then(r => r.json())
+        fetchJSON('data/club.json'),
+        fetchJSON('data/books.json')
       ]);
   state.club = club;
   state.books = books;
@@ -26,6 +35,14 @@ export async function loadData() {
   club.members.forEach(m => state.memberById.set(m.id, m));
   books.forEach(b => state.bookById.set(b.id, b));
   return state;
+}
+
+/** Заменить полку списком из файла, не теряя ссылок на state.books. */
+export function replaceBooks(list) {
+  state.books.length = 0;
+  state.books.push(...list);
+  state.bookById.clear();
+  list.forEach(b => state.bookById.set(b.id, b));
 }
 
 /* ── что разошлось с файлами ─────────────────────────────────────────────
