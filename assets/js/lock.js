@@ -405,9 +405,9 @@ function wirePublishSection(body) {
 
 function showPublishOn() {
   const body = openModal('Сохранение включено', `
-    <p class="field-hint">Токен зашифрован фразой клуба. Осталось положить его в
-      репозиторий: нажмите «Сохранить на сайт» внизу страницы — сохранение уже
-      работает в этой вкладке и закоммитит само себя.</p>
+    <p class="field-hint">Токен проверен и зашифрован фразой клуба. В репозиторий
+      он уезжает сам — закройте это окно, полоса внизу страницы покажет
+      результат.</p>
     <textarea class="export-json" id="pubJson" readonly spellcheck="false"
       style="min-height:150px">${esc(JSON.stringify({ publish: state.club.publish }, null, 2))}</textarea>
     <p class="field-hint">Если сохранить не выйдет — например, токен окажется без
