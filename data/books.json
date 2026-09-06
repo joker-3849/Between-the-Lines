@@ -754,5 +754,26 @@
         "quote": null
       }
     }
+  },
+  {
+    "id": "test",
+    "title": "тест",
+    "author": "тест",
+    "year": null,
+    "pages": null,
+    "genre": "Детектив",
+    "edition": "",
+    "art": {
+      "bg": "#1f1710",
+      "fg": "#f2e6d2",
+      "acc": "#d99a3e",
+      "motif": "sun"
+    },
+    "discussed": "2026-09-06",
+    "proposedBy": null,
+    "coverQuery": "тест тест",
+    "cover": null,
+    "isbn": null,
+    "reviews": {}
   }
 ]
