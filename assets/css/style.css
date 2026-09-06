@@ -1184,26 +1184,30 @@ input[type="number"]{-moz-appearance:textfield}
 .btn-danger:hover{color:#fdf1e4;background:#a5432f;border-color:#a5432f}
 .modal-actions{display:flex;gap:14px;align-items:center;margin-top:8px;flex-wrap:wrap}
 
-/* Настройка сохранения — отдельный, заведомо более редкий разговор, чем
-   смена фразы, поэтому отделена линией и приглушена. */
-.pass-publish{
-  margin-top:26px;padding-top:22px;
+/* Вкладки в окне редактора: смена фразы и настройка сохранения — разговоры
+   разной частоты, рядом в одном столбце они путали. */
+.tabs{
+  display:flex;gap:4px;
+  margin:-6px 0 22px;
+  border-bottom:1px solid var(--rule);
+}
+.tab{
+  padding:9px 15px;margin-bottom:-1px;
+  font-size:13px;color:var(--faint);
+  border-bottom:2px solid transparent;
+  transition:color .2s var(--ease),border-color .2s var(--ease);
+}
+.tab:hover{color:var(--dim)}
+.tab[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--gold)}
+[role="tabpanel"][hidden]{display:none}
+
+/* Выход из редактора — не про фразу и не про токен, поэтому стоит под
+   вкладками, а не внутри одной из них. */
+.modal-foot{
+  margin-top:24px;padding-top:18px;
   border-top:1px solid var(--rule);
 }
-/* Свёрнута по умолчанию: токен настраивают однажды, а окно открывают, чтобы
-   сменить фразу или выйти — поля репозитория тут только мешали бы. */
-.pass-publish > summary{
-  cursor:pointer;list-style:none;
-  font-size:11px;letter-spacing:.14em;text-transform:uppercase;
-  color:var(--faint);margin-bottom:12px;
-  display:flex;align-items:center;gap:8px;
-}
-.pass-publish > summary::-webkit-details-marker{display:none}
-.pass-publish > summary::before{
-  content:"+";font-family:var(--serif);font-size:15px;letter-spacing:0;
-}
-.pass-publish[open] > summary::before{content:"–"}
-.pass-publish > summary:hover{color:var(--dim)}
+
 .pass-publish .field-hint{margin-bottom:12px}
 .pass-publish .field-hint b{font-weight:500;color:var(--dim)}
 

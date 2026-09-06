@@ -171,39 +171,55 @@ export function requireUnlock({ needPhrase = false } = {}) {
  * в репозиторий, смена живёт только в этой вкладке — как и правки книг.
  */
 export function openLockSettings() {
-  const body = openModal('Фраза клуба', `
-    <form id="passForm" novalidate>
-      <p class="field-hint" style="margin:-4px 0 18px">
-        Фразу знают все, кто правит полку. Чтобы сменить её, нужно назвать
-        текущую — других прав на статическом сайте нет.
-      </p>
-      <div class="field">
-        <label for="passOld">Текущая фраза</label>
-        <input id="passOld" type="password" autocomplete="current-password"
-          autocapitalize="off" spellcheck="false">
-      </div>
-      <div class="field-row">
+  const body = openModal('Редактор', `
+    <div class="tabs" role="tablist">
+      <button type="button" class="tab" id="tabPhrase" role="tab"
+        aria-selected="true" aria-controls="panePhrase">Фраза клуба</button>
+      <button type="button" class="tab" id="tabPublish" role="tab"
+        aria-selected="false" aria-controls="panePublish">Сохранение</button>
+    </div>
+
+    <div id="panePhrase" role="tabpanel" aria-labelledby="tabPhrase">
+      <form id="passForm" novalidate>
+        <p class="field-hint" style="margin:0 0 18px">
+          Фразу знают все, кто правит полку. Чтобы сменить её, нужно назвать
+          текущую — других прав на статическом сайте нет.
+        </p>
         <div class="field">
-          <label for="passNew">Новая фраза</label>
-          <input id="passNew" type="password" autocomplete="new-password"
+          <label for="passOld">Текущая фраза</label>
+          <input id="passOld" type="password" autocomplete="current-password"
             autocapitalize="off" spellcheck="false">
         </div>
-        <div class="field">
-          <label for="passNew2">Ещё раз</label>
-          <input id="passNew2" type="password" autocomplete="new-password"
-            autocapitalize="off" spellcheck="false">
+        <div class="field-row">
+          <div class="field">
+            <label for="passNew">Новая фраза</label>
+            <input id="passNew" type="password" autocomplete="new-password"
+              autocapitalize="off" spellcheck="false">
+          </div>
+          <div class="field">
+            <label for="passNew2">Ещё раз</label>
+            <input id="passNew2" type="password" autocomplete="new-password"
+              autocapitalize="off" spellcheck="false">
+          </div>
         </div>
-      </div>
-      <p class="field-hint" id="passError" hidden></p>
-      <div class="modal-actions">
-        <button type="submit" class="btn btn-primary">${icon('check')} Сменить фразу</button>
-        <button type="button" class="btn btn-ghost" id="passClose">Отмена</button>
-        ${unlocked() ? `<button type="button" class="link" id="passForget">Выйти из редактора</button>` : ''}
-      </div>
-    </form>
-    ${publishSectionHTML()}
+        <p class="field-hint" id="passError" hidden></p>
+        <div class="modal-actions">
+          <button type="submit" class="btn btn-primary">${icon('check')} Сменить фразу</button>
+          <button type="button" class="btn btn-ghost" id="passClose">Отмена</button>
+        </div>
+      </form>
+    </div>
+
+    <div id="panePublish" role="tabpanel" aria-labelledby="tabPublish" hidden>
+      ${publishSectionHTML()}
+    </div>
+
+    ${unlocked() ? `<div class="modal-foot">
+      <button type="button" class="link" id="passForget">Выйти из редактора</button>
+    </div>` : ''}
   `, 'modal-lock');
 
+  wireTabs(body);
   wirePublishSection(body);
 
   const oldInput = body.querySelector('#passOld');
@@ -289,6 +305,18 @@ function showPassJSON(hash) {
   });
 }
 
+/* Две вкладки вместо одного длинного окна: смена фразы и настройка
+   сохранения — разговоры разной частоты, и рядом они путали. */
+function wireTabs(body) {
+  const tabs = [...body.querySelectorAll('.tab')];
+  const show = id => tabs.forEach(t => {
+    const on = t.id === id;
+    t.setAttribute('aria-selected', String(on));
+    body.querySelector(`#${t.getAttribute('aria-controls')}`).hidden = !on;
+  });
+  tabs.forEach(t => t.addEventListener('click', () => show(t.id)));
+}
+
 /* ── сохранение на сайт ───────────────────────────────────────────────── */
 
 /* Включить сохранение — значит положить в club.json токен GitHub,
@@ -297,12 +325,11 @@ function showPassJSON(hash) {
 
 function publishSectionHTML() {
   const on = canPublish();
-  return `<details class="pass-publish">
-    <summary>Сохранение на сайт${on ? ' — включено' : ''}</summary>
+  return `<div class="pass-publish">
     ${on
       ? `<p class="field-hint">Включено: репозиторий
-           <code>${esc(state.club.publish.repo)}</code>. Кнопка «Сохранить на сайт»
-           появляется внизу, как только что-то поменяли.</p>
+           <code>${esc(state.club.publish.repo)}</code>. Правки уходят коммитом
+           сами, полоса внизу страницы показывает результат.</p>
          <p class="field-hint">Токен зашифрован текущей фразой — при смене фразы он
            перешифровывается сам. Чтобы заменить токен, вставьте новый ниже.</p>`
       : `<p class="field-hint">Пока выключено: правки живут в памяти вкладки, и в
@@ -312,6 +339,12 @@ function publishSectionHTML() {
            токен лежит в открытом репозитории, подобрать короткую фразу к нему можно
            офлайн — сначала смените её на длинную и случайную, слов из пяти.</p>`}
     <form id="pubForm" novalidate>
+      <div class="field">
+        <label for="pubPass">Фраза клуба</label>
+        <input id="pubPass" type="password" autocomplete="current-password"
+          autocapitalize="off" spellcheck="false">
+        <p class="field-hint">Ею шифруется токен, поэтому назвать её нужно и здесь.</p>
+      </div>
       <div class="field">
         <label for="pubRepo">Репозиторий</label>
         <input id="pubRepo" placeholder="владелец/репозиторий" autocomplete="off"
@@ -336,7 +369,7 @@ function publishSectionHTML() {
         ${on ? `<button type="button" class="link" id="pubOff">Выключить сохранение</button>` : ''}
       </div>
     </form>
-  </details>`;
+  </div>`;
 }
 
 /** Владелец и репозиторий из адреса GitHub Pages, если сайт открыт оттуда. */
@@ -366,7 +399,7 @@ function wirePublishSection(body) {
     const repo = body.querySelector('#pubRepo').value.trim();
     const token = body.querySelector('#pubToken').value.trim();
     const branch = body.querySelector('#pubBranch').value.trim();
-    const pass = body.querySelector('#passOld').value;
+    const pass = body.querySelector('#pubPass').value;
 
     if (!/^[\w.-]+\/[\w.-]+$/.test(repo)) return fail('Репозиторий пишется как «владелец/имя».');
     if (!token) return fail('Вставьте токен.');
@@ -376,8 +409,8 @@ function wirePublishSection(body) {
 
     const hash = await sha256(pass);
     if (hash !== passHash()) {
-      body.querySelector('#passOld').focus();
-      return fail('Сначала введите текущую фразу в поле выше — ею и шифруется токен.');
+      body.querySelector('#pubPass').focus();
+      return fail('Фраза не подходит — ею шифруется токен, без неё включить нельзя.');
     }
 
     // Проверяем права до шифрования: токен без записи выглядел бы рабочим
