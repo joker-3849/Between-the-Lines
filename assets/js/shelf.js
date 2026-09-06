@@ -220,7 +220,11 @@ function coverWidthForHeight() {
 
 const clampCover = w => Math.max(COVER_MIN, Math.min(COVER_MAX, Math.round(w)));
 
-const PILE_ROW_MIN = 26, PILE_ROW_MAX = 40, PILE_HEAD = 34, PILE_GAP = 5;
+/* Нижняя граница плашки — не «сколько красиво», а «сколько ещё читается»:
+   на 1024×768 стопка при 26px упиралась в минимум и всё равно на десяток
+   пикселей выталкивала страницу за экран. При 21px и подписи в 14px строчка
+   ещё разборчива, а полка наконец помещается. */
+const PILE_ROW_MIN = 21, PILE_ROW_MAX = 40, PILE_HEAD = 34, PILE_GAP = 5;
 
 /**
  * Высоту полки задают не только книги: рядом стоит стопка, и на невысоком
