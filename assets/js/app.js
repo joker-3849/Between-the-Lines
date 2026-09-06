@@ -2,7 +2,7 @@
 
 import { state, loadData, onDirtyChange } from './data.js';
 import { icon, hydrateIcons } from './icons.js';
-import { initShelf, refreshShelf } from './shelf.js';
+import { initShelf, refreshShelf, refitShelf } from './shelf.js';
 import { initBook, showBook, closeBook, currentBookId, refreshBook } from './book.js';
 import { initPages, renderLines, renderChronicle, renderYear } from './pages.js';
 import { initAddBook } from './addbook.js';
@@ -34,6 +34,10 @@ function setView(name) {
   currentView = name;
 
   RENDERERS[name]?.();
+
+  // Пока полка была скрыта, её могли перерисовать (правка книги, чужой
+  // коммит) — размеры тогда не считались. Меряем, как только она видима.
+  if (name === 'shelf') requestAnimationFrame(refitShelf);
 
   if (name === 'shelf') window.scrollTo({ top: shelfScroll, behavior: 'auto' });
   else if (name !== 'book') window.scrollTo({ top: 0, behavior: 'auto' });

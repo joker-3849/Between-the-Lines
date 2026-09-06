@@ -253,6 +253,10 @@ export function refitShelf() {
   const front = document.querySelector('.shelf-front');
   // В режиме шкафа высота не подгоняется: полки специально уходят за экран.
   if (!front || !lastFrontCount || ui.pileOpen) return;
+  // Полку перерисовывают и когда она скрыта — например, после правки книги,
+  // пока открыта карточка. У скрытого блока все размеры нулевые, и подгонка
+  // выдавала бы минимальную обложку, с которой полка потом и оставалась.
+  if (!front.clientWidth) return;
 
   const byHeight = coverWidthForHeight();
   if (byHeight != null) {
