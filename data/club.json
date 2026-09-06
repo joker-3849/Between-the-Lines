@@ -80,5 +80,11 @@
       }
     }
   },
-  "editPass": "0a1513fa92c09fb1cf27f087a0f722f2409ba16e423949ead920ddf8954ffa59"
+  "editPass": "0a1513fa92c09fb1cf27f087a0f722f2409ba16e423949ead920ddf8954ffa59",
+  "publish": {
+    "repo": "joker-3849/Between-the-Lines",
+    "salt": "7oVFvFf3hSexAK1u2xPHwQ==",
+    "iter": 600000,
+    "token": "ikndKX9u98EJopa7iuosLG0SDr06a4CXSA46bX1ro1yIBVWNIuBDxsGP0sVk7dyXCBStf03aEaifhoo+e540YlZqZYY+kUHYLtdMRvDvtpmV3YzifO+Aj6IXhpAjhtGYr+NepIy8jFWztDdgy6dz96eTtn64uS8ChA=="
+  }
 }
