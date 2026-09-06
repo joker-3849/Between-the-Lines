@@ -2,7 +2,8 @@
 
 import {
   state, avg, spread, allLines, fmtDate, nPlural, plural, numPlural,
-  memberMean, memberScore, yearOf, years, num
+  memberMean, memberScore, yearOf, years, num,
+  pagesRead, clubMean, genreStats, favouriteGenre, goodreadsPairs, yearStats
 } from './data.js';
 import { coverHTML, avatarHTML, whoHTML, esc } from './ui.js';
 import { icon, hydrateIcons } from './icons.js';
@@ -66,6 +67,322 @@ export function renderLines() {
 
 /* ══════════════════ Хроника ══════════════════ */
 
+/* «Хроника» — это не только список встреч, но и всё, что из него следует:
+   какие жанры клуб любит, кто из участниц строже, где мы расходимся с
+   Goodreads. Каждая сводка считается из тех же оценок, что и страница книги,
+   и пропадает целиком, если считать не из чего: пустая карточка с прочерками
+   выглядит как поломка, а не как «данных пока нет». */
+
+let ratingWho = null;      // чей личный рейтинг открыт
+
+const scale = () => state.club.scale || 10;
+
+/* ── свод ─────────────────────────────────────────────────────────────── */
+
+function statHTML(value, label) {
+  return `<div class="cs-stat"><b>${value}</b><span>${esc(label)}</span></div>`;
+}
+
+function summaryHTML() {
+  const books = state.books;
+  const pages = pagesRead(books);
+  const mean = clubMean(books);
+  const fav = favouriteGenre(books);
+
+  return `<div class="cs-stats">
+    ${statHTML(books.length, plural(books.length, 'книга', 'книги', 'книг'))}
+    ${pages ? statHTML(pages.toLocaleString('ru-RU'), 'страниц прочитано') : ''}
+    ${mean != null ? statHTML(num(mean), `средняя оценка из ${scale()}`) : ''}
+    ${fav ? statHTML(`<span class="cs-stat-word">${esc(fav.genre)}</span>`, 'любимый жанр') : ''}
+  </div>`;
+}
+
+/* ── жанры ────────────────────────────────────────────────────────────── */
+
+/* Полоса — это оценка, а не количество: жанр, который читали дважды и оба
+   раза с восторгом, любимее того, который читали пять раз вполсилы. Число
+   рядом — сколько книг жанра оценили: непрочитанные в среднее не входят и
+   в счёт при нём стоять не должны. */
+function genreBarsHTML(rows, favGenre) {
+  return `<div class="cs-bars">${rows.map(r => `
+    <div class="cs-bar${r.genre === favGenre ? ' is-fav' : ''}">
+      <span class="cs-bar-label">${esc(r.genre)}</span>
+      <span class="cs-bar-track">
+        <span class="cs-bar-fill" style="width:${(r.mean / scale() * 100).toFixed(1)}%"></span>
+      </span>
+      <span class="cs-bar-num">${num(r.mean)}</span>
+      <span class="cs-bar-count">${r.rated}&nbsp;кн.</span>
+    </div>`).join('')}</div>`;
+}
+
+function clubGenresHTML() {
+  const rows = genreStats().filter(r => r.mean != null)
+    .sort((a, b) => b.mean - a.mean || b.count - a.count);
+  if (!rows.length) return '';
+  const fav = favouriteGenre();
+
+  return `<section class="cs-card">
+    <h3>Любимый жанр клуба</h3>
+    ${fav ? `<p class="cs-lead">${esc(fav.genre)} <b>${num(fav.mean)}</b>
+      <span>из ${scale()} · ${nPlural(fav.rated, 'книга', 'книги', 'книг')}</span></p>` : ''}
+    ${genreBarsHTML(rows, fav?.genre)}
+    <p class="cs-note">Полоса — средняя оценка жанра, а не то, как часто его берут.
+      Жанр с единственной книгой в любимые не выбирается: одна десятка — это ещё
+      про книгу, а не про жанр.</p>
+  </section>`;
+}
+
+function memberGenresHTML() {
+  const rows = state.members
+    .map(m => ({ m, fav: favouriteGenre(state.books, b => memberScore(b, m.id)) }))
+    .filter(x => x.fav);
+  if (!rows.length) return '';
+
+  return `<section class="cs-card">
+    <h3>Любимые жанры участниц</h3>
+    <div class="cs-people">
+      ${rows.map(({ m, fav }) => `<div class="cs-person">
+        ${whoHTML(m)}
+        <span class="cs-person-genre">${esc(fav.genre)}</span>
+        <b>${num(fav.mean)}</b>
+      </div>`).join('')}
+    </div>
+    <p class="cs-note">Жанр, который каждая оценивает выше остальных. Жанры,
+      прочитанные всего раз, в счёт не идут, пока есть прочитанные дважды.</p>
+  </section>`;
+}
+
+/* ── личный рейтинг ───────────────────────────────────────────────────── */
+
+/* Свой список у каждой получается заметно не таким, как общий: рядом с
+   личным баллом стоит расхождение с клубом — по нему сразу видно, где
+   человек оказался один против всех. */
+function ratingBodyHTML() {
+  const m = state.memberById.get(ratingWho);
+  if (!m) return '';
+
+  const rows = state.books
+    .map(b => ({ book: b, mine: memberScore(b, m.id), club: avg(b) }))
+    .filter(r => typeof r.mine === 'number')
+    .sort((a, b) => b.mine - a.mine);
+
+  if (!rows.length) {
+    return `<p class="cs-empty">${esc(m.name)} пока не оценила ни одной книги.</p>`;
+  }
+
+  const mine = memberMean(m.id);
+  const club = clubMean(state.books.filter(b => typeof memberScore(b, m.id) === 'number'));
+  const off = mine - club;
+  const verdict = Math.abs(off) < 0.15
+    ? 'ровно как клуб в среднем'
+    : `${off > 0 ? 'щедрее' : 'строже'} клуба на ${numPlural(Math.abs(off), 'балл', 'балла', 'баллов')}`;
+
+  return `<ol class="cs-rank">
+    ${rows.map((r, i) => {
+      const d = r.mine - r.club;
+      const sign = Math.abs(d) < 0.05 ? '' : d > 0 ? 'up' : 'down';
+      return `<li>
+        <span class="cs-rank-n">${i + 1}</span>
+        <button class="cs-rank-title" data-book-link="${esc(r.book.id)}">${esc(r.book.title)}</button>
+        <span class="cs-rank-score">${num(r.mine)}</span>
+        <span class="cs-rank-diff ${sign}">${sign ? (d > 0 ? '+' : '−') + num(Math.abs(d)) : '='}</span>
+      </li>`;
+    }).join('')}
+  </ol>
+  <p class="cs-note">Средняя оценка: <b>${num(mine)}</b> — ${verdict}.
+    Справа — расхождение с оценкой клуба по той же книге.</p>`;
+}
+
+function ratingHTML() {
+  const rated = state.members.filter(m =>
+    state.books.some(b => typeof memberScore(b, m.id) === 'number'));
+  if (!rated.length) return '';
+  if (!rated.some(m => m.id === ratingWho)) ratingWho = rated[0].id;
+
+  return `<section class="cs-card cs-card-wide">
+    <h3>Ваш рейтинг</h3>
+    <div class="cs-who">${rated.map(m =>
+      `<button class="chip" data-rating="${esc(m.id)}" aria-pressed="${m.id === ratingWho}">${esc(m.name)}</button>`
+    ).join('')}</div>
+    <div id="csRatingBody">${ratingBodyHTML()}</div>
+  </section>`;
+}
+
+/* ── клуб и Goodreads ─────────────────────────────────────────────────── */
+
+/* Оценку Goodreads приходится вписывать руками: открытого API у них нет, а
+   страницу оттуда браузер читать не даст. Пока её нет ни у одной книги,
+   карточка не считает ничего — она объясняет, где это поле взять. */
+function goodreadsHTML() {
+  const pairs = goodreadsPairs().sort((a, b) => Math.abs(b.diff) - Math.abs(a.diff));
+
+  if (!pairs.length) {
+    return `<section class="cs-card">
+      <h3>Клуб и Goodreads</h3>
+      <p class="cs-empty">Ни у одной книги не проставлена оценка Goodreads.
+        Она вписывается руками — в режиме редактора, на странице книги,
+        «Внести изменения» → «Оценка Goodreads». Автоматически её не достать:
+        Goodreads не отдаёт оценки наружу.</p>
+    </section>`;
+  }
+
+  const off = pairs.reduce((a, x) => a + x.diff, 0) / pairs.length;
+  const lead = Math.abs(off) < 0.15
+    ? 'Клуб и Goodreads сходятся почти в ноль.'
+    : `Клуб ${off > 0 ? 'добрее' : 'строже'} Goodreads в среднем на `
+      + `${numPlural(Math.abs(off), 'балл', 'балла', 'баллов')}.`;
+
+  return `<section class="cs-card cs-card-wide">
+    <h3>Клуб и Goodreads</h3>
+    <p class="cs-lead-plain">${lead} Оценки Goodreads приведены к нашей
+      ${scale()}-балльной шкале, сравниваются ${nPlural(pairs.length, 'книга', 'книги', 'книг')}.</p>
+    <div class="cs-gr">
+      ${pairs.map(({ book, ours, theirs, diff }) => `<div class="cs-gr-row">
+        <button class="cs-gr-title" data-book-link="${esc(book.id)}">${esc(book.title)}</button>
+        <span class="cs-gr-pair">
+          <span class="cs-gr-vs">мы</span><b>${num(ours)}</b>
+          <span class="cs-gr-vs">goodreads</span><b class="cs-gr-them">${num(theirs)}</b>
+        </span>
+        <span class="cs-rank-diff ${Math.abs(diff) < 0.05 ? '' : diff > 0 ? 'up' : 'down'}">
+          ${Math.abs(diff) < 0.05 ? '=' : (diff > 0 ? '+' : '−') + num(Math.abs(diff))}
+        </span>
+      </div>`).join('')}
+    </div>
+  </section>`;
+}
+
+/* ── наблюдения ───────────────────────────────────────────────────────── */
+
+/** Пара участниц, чьи оценки расходятся меньше всего. */
+function closestPair() {
+  const out = [];
+  const ms = state.members;
+  for (let i = 0; i < ms.length; i++) {
+    for (let j = i + 1; j < ms.length; j++) {
+      const diffs = state.books.map(b => {
+        const x = memberScore(b, ms[i].id), y = memberScore(b, ms[j].id);
+        return typeof x === 'number' && typeof y === 'number' ? Math.abs(x - y) : null;
+      }).filter(v => v != null);
+      if (diffs.length >= 3) {
+        out.push({ a: ms[i], b: ms[j], n: diffs.length,
+                   d: diffs.reduce((s, v) => s + v, 0) / diffs.length });
+      }
+    }
+  }
+  if (!out.length) return null;
+  return out.reduce((p, q) => (q.d < p.d ? q : p));
+}
+
+/* Средний промежуток между встречами. Считается по датам, а не по книгам:
+   за один вечер клуб успевает разобрать и три, и это одна встреча, а не три
+   с нулевыми промежутками. */
+function cadence() {
+  const days = [...new Set(state.books.map(b => b.discussed))]
+    .map(d => Date.parse(d + 'T00:00:00'))
+    .filter(t => !Number.isNaN(t))
+    .sort((a, b) => a - b);
+  if (days.length < 4) return null;
+  return (days.at(-1) - days[0]) / 86400000 / (days.length - 1);
+}
+
+/**
+ * Наблюдения — то, что видно только на всей полке сразу. Каждое проверяет
+ * себя само и не появляется, пока считать не из чего: три книги ещё ничего
+ * не говорят о вкусах клуба.
+ */
+function observations() {
+  const out = [];
+  const books = state.books;
+  const rated = books.filter(b => avg(b) != null);
+
+  const byCount = genreStats().sort((a, b) => b.count - a.count);
+  if (byCount[0] && byCount[0].count >= 2 && byCount.length > 1) {
+    out.push(`Чаще всего клуб берёт ${byCount[0].genre.toLowerCase()} — `
+      + `${byCount[0].count} ${plural(byCount[0].count, 'книга', 'книги', 'книг')} из ${books.length}.`);
+  }
+
+  const fav = favouriteGenre();
+  if (fav && byCount.length > 1 && fav.genre !== byCount[0]?.genre) {
+    out.push(`Читают чаще одно, а любят другое: выше всего оценивают `
+      + `${fav.genre.toLowerCase()} — в среднем ${num(fav.mean)} из ${scale()}.`);
+  }
+
+  const yrs = years().filter(y => yearStats(y).count >= 3);
+  if (yrs.length >= 2) {
+    const [now, prev] = yrs.map(y => yearStats(y));
+    const d = now.mean - prev.mean;
+    out.push(Math.abs(d) < 0.15
+      ? `Планка держится: средняя оценка ${now.year} года — ${num(now.mean)}, ровно как в ${prev.year}-м.`
+      : `Средняя оценка ${now.year} года — ${num(now.mean)}, это на `
+        + `${numPlural(Math.abs(d), 'балл', 'балла', 'баллов')} ${d > 0 ? 'выше' : 'ниже'}, чем в ${prev.year}-м.`);
+  }
+
+  const means = state.members.map(m => ({ m, mean: memberMean(m.id) })).filter(x => x.mean != null);
+  if (means.length >= 2) {
+    const high = means.reduce((a, b) => (b.mean > a.mean ? b : a));
+    const low = means.reduce((a, b) => (b.mean < a.mean ? b : a));
+    // Разницу считаем от округлённых значений: иначе в одной фразе стоят
+    // «8» и «7,6», а между ними внезапно «0,5».
+    const gap = Math.round(high.mean * 10) / 10 - Math.round(low.mean * 10) / 10;
+    if (high.m !== low.m && gap > 0) {
+      out.push(`${high.m.name} ставит выше всех (${num(high.mean)}), ${low.m.name} — строже всех `
+        + `(${num(low.mean)}); между ними ${numPlural(gap, 'балл', 'балла', 'баллов')}.`);
+    }
+  }
+
+  const pair = closestPair();
+  if (pair) {
+    out.push(`Ближе всего сходятся ${pair.a.name} и ${pair.b.name}: по `
+      + `${nPlural(pair.n, 'книге', 'книгам', 'книгам')} их оценки расходятся в среднем на `
+      + `${numPlural(pair.d, 'балл', 'балла', 'баллов')}.`);
+  }
+
+  if (rated.length >= 3) {
+    const loud = rated.reduce((a, b) => (spread(b) > spread(a) ? b : a));
+    if (spread(loud) >= 2) {
+      out.push(`Больше всего спорили о книге «${loud.title}» — разброс `
+        + `${numPlural(spread(loud), 'балл', 'балла', 'баллов')}.`);
+    }
+  }
+
+  const rhythm = cadence();
+  if (rhythm) {
+    out.push(`Встречаются в среднем раз в ${nPlural(Math.round(rhythm), 'день', 'дня', 'дней')}.`);
+  }
+
+  const pages = pagesRead();
+  if (pages) {
+    out.push(`Всего прочитано ${pages.toLocaleString('ru-RU')} `
+      + `${plural(pages, 'страница', 'страницы', 'страниц')}.`);
+  }
+
+  return out;
+}
+
+function observationsHTML() {
+  const list = observations();
+  if (!list.length) return '';
+  return `<section class="cs-card cs-card-wide cs-notes">
+    <h3>Наблюдения сайта</h3>
+    <ul>${list.map(t => `<li>${esc(t)}</li>`).join('')}</ul>
+    <p class="cs-note">Считается заново при каждом открытии страницы — из тех же
+      оценок, что и всё остальное.</p>
+  </section>`;
+}
+
+/* ── сам список встреч ────────────────────────────────────────────────── */
+
+function yearHeadHTML(year, list) {
+  const st = yearStats(year, list);
+  const bits = [nPlural(st.count, 'встреча', 'встречи', 'встреч')];
+  if (st.mean != null) bits.push(`средняя ${num(st.mean)}`);
+  if (st.pages) bits.push(`${st.pages.toLocaleString('ru-RU')} с.`);
+  return `<div class="chron-year">
+    <h2>${year}</h2>
+    <span>${esc(bits.join(' · '))}</span>
+  </div>`;
+}
+
 export function renderChronicle() {
   const view = document.getElementById('view-chronicle');
   const byYear = new Map();
@@ -78,10 +395,7 @@ export function renderChronicle() {
     });
 
   const blocks = [...byYear.entries()].map(([year, books]) => `
-    <div class="chron-year">
-      <h2>${year}</h2>
-      <span>${nPlural(books.length, 'встреча', 'встречи', 'встреч')}</span>
-    </div>
+    ${yearHeadHTML(year, books)}
     ${books.map(b => `
       <button class="chron-row" data-book-link="${esc(b.id)}">
         <span class="chron-date">${esc(fmtDate(b.discussed, { withYear: false }))}</span>
@@ -90,19 +404,45 @@ export function renderChronicle() {
           <span class="chron-title">${esc(b.title)}</span>
           <span class="chron-sub">${esc(b.author)} · ${esc(b.genre)}</span>
         </span>
-        <span class="chron-score">${num(avg(b))}<small>/${state.club.scale}</small></span>
+        <span class="chron-score">${num(avg(b))}<small>/${scale()}</small></span>
       </button>`).join('')}`).join('');
 
   view.innerHTML = `<div class="page">
     <div class="page-head">
       <h1 class="page-title">Хроника</h1>
-      <p class="page-sub">${nPlural(state.books.length, 'встреча', 'встречи', 'встреч')} по датам — от последней к первой.</p>
+      <p class="page-sub">${nPlural(state.books.length, 'встреча', 'встречи', 'встреч')} по датам —
+        и всё, что из них следует.</p>
     </div>
+
+    ${summaryHTML()}
+    <div class="cs-grid">
+      ${clubGenresHTML()}
+      ${memberGenresHTML()}
+      ${goodreadsHTML()}
+      ${ratingHTML()}
+      ${observationsHTML()}
+    </div>
+
+    <h2 class="cs-h">Все встречи</h2>
     ${blocks}
   </div>`;
 
   hydrateIcons(view);
   wireBookLinks(view);
+
+  // Переключатель личного рейтинга перерисовывает только свою карточку:
+  // страница длинная, и полная перерисовка сбрасывала бы прокрутку.
+  const who = view.querySelector('.cs-who');
+  if (who) who.addEventListener('click', e => {
+    const b = e.target.closest('[data-rating]');
+    if (!b || b.dataset.rating === ratingWho) return;
+    ratingWho = b.dataset.rating;
+    who.querySelectorAll('[data-rating]').forEach(x =>
+      x.setAttribute('aria-pressed', String(x.dataset.rating === ratingWho)));
+    const body = view.querySelector('#csRatingBody');
+    body.innerHTML = ratingBodyHTML();
+    wireBookLinks(body);
+  });
 }
 
 /* ══════════════════ Итоги года ══════════════════ */

@@ -93,23 +93,40 @@ img{max-width:100%;display:block}
 /* ── верхняя панель ───────────────────────────────────────────────────── */
 .topbar{
   position:sticky;top:0;z-index:80;
-  /* Сетка, а не space-between: слева кнопка «На полку», справа меню, и
-     ширины у них разные — при space-between вордмарк уезжал от центра. */
+  /* Сетка, а не space-between: слева кнопка «На полку», справа кнопка
+     редактора, и ширины у них разные — при space-between меню уезжало бы
+     от центра страницы. */
   display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:24px;
   padding:14px var(--pad);
   background:linear-gradient(to bottom,var(--void) 62%,transparent);
   backdrop-filter:blur(8px);
 }
+
+/* Логотип живёт в середине меню и раскрывается при прокрутке, раздвигая
+   разделы: max-width, а не width, потому что настоящая ширина зависит от
+   шрифта, а анимировать нужно всё равно число. visibility выключает его из
+   табуляции и для скринридера, пока он схлопнут, и переключается без
+   задержки только в сторону появления. */
 .wordmark{
-  grid-column:2;justify-self:center;
+  /* inline-block, а не flex: во флексе пробелы вокруг «the» пропадают —
+     они оказываются на краях анонимных флекс-элементов и схлопываются. */
+  display:inline-block;overflow:hidden;
   font-family:var(--serif);
-  font-size:19px;letter-spacing:.01em;
+  font-size:19px;letter-spacing:.01em;white-space:nowrap;
   color:var(--ink);text-decoration:none;
-  opacity:0;transform:translateY(-4px);
-  transition:opacity .3s var(--ease),transform .3s var(--ease);
-  pointer-events:none;
+  max-width:0;padding:0;opacity:0;visibility:hidden;
+  transform:translateY(-3px);
+  transition:max-width .42s var(--ease),padding .42s var(--ease),
+    opacity .24s var(--ease),transform .34s var(--ease),
+    visibility 0s linear .42s;
 }
-.topbar.compact .wordmark{opacity:1;transform:none;pointer-events:auto}
+.topbar.compact .wordmark{
+  max-width:260px;padding:0 clamp(8px,1.3vw,18px);
+  opacity:1;visibility:visible;transform:none;
+  transition:max-width .42s var(--ease),padding .42s var(--ease),
+    opacity .3s var(--ease) .12s,transform .34s var(--ease),
+    visibility 0s;
+}
 .wm-the{font-style:italic;color:var(--faint)}
 
 .topbar-back{
@@ -122,11 +139,10 @@ img{max-width:100%;display:block}
 /* grid-area держит колонку за кнопкой, даже когда её нет, — иначе меню
    переезжает в первую колонку и вордмарк снова уходит с центра. */
 .topbar-back[hidden]{display:none}
-.topbar-right{
-  grid-column:3;justify-self:end;
-  display:flex;align-items:center;gap:clamp(6px,1vw,14px);
+.mainnav{
+  grid-column:2;justify-self:center;
+  display:flex;align-items:center;gap:4px;flex-wrap:nowrap;
 }
-.mainnav{display:flex;gap:4px;flex-wrap:wrap;justify-content:flex-end}
 .navlink{
   font-size:13px;letter-spacing:.02em;color:var(--faint);
   padding:6px 12px;border-radius:999px;
@@ -140,6 +156,7 @@ img{max-width:100%;display:block}
    переключение режима — без него сайт просто читают. */
 .editor-btn{
   display:inline-flex;align-items:center;gap:7px;flex:0 0 auto;
+  grid-column:3;justify-self:end;
   font-size:13px;letter-spacing:.02em;color:var(--faint);
   padding:5px 13px;border:1px solid var(--rule);border-radius:999px;
   transition:color .2s var(--ease),border-color .2s var(--ease),background .2s var(--ease);
@@ -151,6 +168,12 @@ img{max-width:100%;display:block}
 /* В режиме редактора кнопка становится состоянием, а не приглашением. */
 .editor-btn[aria-pressed="true"]{
   color:var(--gold);border-color:rgba(101,14,20,.32);background:rgba(101,14,20,.06);
+}
+
+/* Уже примерно 900px раздвигать нечего: разделы, кнопка редактора и логотип
+   вместе перестают помещаться в строку, и логотип остаётся схлопнутым. */
+@media (max-width:900px){
+  .topbar.compact .wordmark{max-width:0;padding:0;opacity:0;visibility:hidden}
 }
 
 /* ── виды ─────────────────────────────────────────────────────────────── */
@@ -220,31 +243,22 @@ img{max-width:100%;display:block}
 .now-date{display:block;font-size:14px;color:var(--ink)}
 .now-countdown{display:block;font-size:12px;color:var(--faint);letter-spacing:.06em;margin-top:1px}
 
-/* Регистрация нужна, чтобы ширина растушёвки анимировалась: незарегистриро-
-   ванные пользовательские свойства браузер не интерполирует. */
-@property --fade-l{syntax:'<length>';inherits:false;initial-value:0px}
-@property --fade-r{syntax:'<length>';inherits:false;initial-value:0px}
-
-/* ── панель фильтров ──────────────────────────────────────────────────── */
-/* Поиск, жанры, сортировка и переключатель обложек живут в одну строку и
-   никогда не переносятся: сжимается поиск, а список жанров превращается в
-   горизонтальный скроллер — видно несколько чипов, остальные прокручиваются. */
+/* ── панель полки ─────────────────────────────────────────────────────── */
+/* Поиск, сортировка и «Добавить книгу» живут в одну строку и никогда не
+   переносятся: при нехватке места сжимается поиск. */
 .toolbar{
   max-width:var(--maxw);margin:clamp(18px,4vh,58px) auto 0;
   padding:0 var(--pad);
-  display:flex;flex-direction:column;gap:12px;
+  display:flex;align-items:center;gap:clamp(6px,1.4vw,16px);flex-wrap:nowrap;
 }
-/* Первая строка — поиск, сортировка, обложки и «Добавить книгу»; вторая —
-   жанры. Раньше жанры делили строку со всем остальным, и места им не хватало. */
-.tb-row{display:flex;align-items:center;gap:clamp(6px,1.4vw,16px);flex-wrap:nowrap;width:100%}
-.tb-row-main .tb-search{flex:1 1 auto}
 .tb-add{flex:0 0 auto;height:var(--ctl-h);padding:0 18px;white-space:nowrap}
 .tb-search{
   display:flex;align-items:center;gap:9px;
+  flex:1 1 auto;
   border:1px solid var(--rule);border-radius:999px;
   background:var(--raise);
   height:var(--ctl-h);padding:0 clamp(11px,1.2vw,16px);
-  flex:0 1 230px;min-width:0;
+  min-width:0;
   color:var(--faint);
   transition:border-color .2s var(--ease),background .2s var(--ease);
 }
@@ -255,32 +269,8 @@ img{max-width:100%;display:block}
 }
 .tb-search input::placeholder{color:var(--faint)}
 
-/* Единственный элемент панели, которому позволено прокручиваться.
-   Маска справа показывает, что чипы продолжаются за краем. */
-.tb-genres{
-  display:flex;gap:7px;flex-wrap:nowrap;
-  width:100%;min-width:0;
-  overflow-x:auto;overflow-y:hidden;
-  scrollbar-width:none;-ms-overflow-style:none;
-  padding-bottom:2px;
-  /* Растушёвка с той стороны, где ещё есть неувиденные чипы: классы
-     can-left / can-right ставит скрипт по фактической позиции прокрутки. */
-  --fade-l:0px;--fade-r:0px;
-  -webkit-mask-image:linear-gradient(90deg,transparent 0,#000 var(--fade-l),
-    #000 calc(100% - var(--fade-r)),transparent 100%);
-  mask-image:linear-gradient(90deg,transparent 0,#000 var(--fade-l),
-    #000 calc(100% - var(--fade-r)),transparent 100%);
-  transition:--fade-l .2s linear,--fade-r .2s linear;
-}
-/* Полосу можно тянуть мышью — курсор об этом и сообщает. */
-.tb-genres{cursor:grab}
-.tb-genres.dragging{cursor:grabbing;scroll-behavior:auto}
-.tb-genres.dragging .chip{pointer-events:none}
-.tb-genres.can-left{--fade-l:30px}
-.tb-genres.can-right{--fade-r:30px}
-.tb-genres::-webkit-scrollbar{display:none}
-.chip{flex:0 0 auto}
 .chip{
+  flex:0 0 auto;
   display:inline-flex;align-items:center;
   height:var(--ctl-h);
   border:1px solid var(--rule);border-radius:999px;
@@ -292,6 +282,7 @@ img{max-width:100%;display:block}
 .chip[aria-pressed="true"]{color:var(--void);background:var(--ink);border-color:var(--ink)}
 
 .tb-sort{
+  position:relative;
   display:flex;align-items:center;flex:0 0 auto;
   height:var(--ctl-h);
   color:var(--faint);
@@ -299,10 +290,23 @@ img{max-width:100%;display:block}
   background:var(--raise);
   padding:0 clamp(11px,1.2vw,16px);
 }
+/* Своя стрелка вместо системной: у нативной ширина зависит от платформы, её
+   не обойти отступом, и на узкой строке текст залезал под неё. */
+.tb-sort::after{
+  content:"";position:absolute;right:13px;top:50%;
+  width:7px;height:7px;margin-top:-5px;
+  border-right:1.5px solid currentColor;border-bottom:1.5px solid currentColor;
+  transform:rotate(45deg);
+  pointer-events:none;
+}
 .tb-sort select{
+  appearance:none;-webkit-appearance:none;
   background:none;border:none;outline:none;
   font-size:14px;color:var(--dim);cursor:pointer;
-  padding-right:2px;
+  /* Место под свою стрелку; длинный вариант обрезается многоточием, а не
+     заезжает под неё. */
+  padding-right:20px;
+  text-overflow:ellipsis;
 }
 .tb-sort select:hover{color:var(--ink)}
 .tb-sort option{background:var(--void-2);color:var(--ink)}
@@ -767,6 +771,135 @@ img{max-width:100%;display:block}
 .chron-score{font-family:var(--serif);font-size:22px;color:var(--gold);white-space:nowrap}
 .chron-score small{font-size:12px;color:var(--faint)}
 
+/* ── сводка «Хроники» ─────────────────────────────────────────────────── */
+/* Плитки и карточки одного семейства: рамка, скруглние и приподнятый фон —
+   чтобы сводка читалась как отдельный слой над списком встреч, а не как
+   ещё несколько строк списка. */
+.cs-stats{
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(148px,1fr));
+  gap:clamp(8px,1.2vw,14px);
+}
+.cs-stat{
+  border:1px solid var(--rule);border-radius:14px;
+  background:var(--raise);padding:16px 18px;
+}
+.cs-stat b{
+  display:block;font-family:var(--serif);font-size:clamp(28px,3.4vw,38px);
+  line-height:1;color:var(--ink);
+}
+/* Слово вместо числа: в ту же строку крупный шрифт не помещается. */
+.cs-stat b .cs-stat-word{font-size:clamp(19px,2.2vw,25px);line-height:1.15;display:block}
+/* Только прямой потомок: внутри b тоже бывает span, и он не подпись. */
+.cs-stat > span{
+  display:block;margin-top:8px;
+  font-size:11px;letter-spacing:.13em;text-transform:uppercase;color:var(--faint);
+}
+
+.cs-grid{
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));
+  gap:clamp(8px,1.2vw,14px);margin-top:clamp(8px,1.2vw,14px);
+}
+.cs-card{
+  border:1px solid var(--rule);border-radius:16px;
+  background:var(--raise);padding:clamp(16px,2vw,22px);
+  min-width:0;
+}
+/* Карточкам со списком нужна вся ширина: в узкой колонке название книги
+   и две оценки в строку уже не помещаются. */
+.cs-card-wide{grid-column:1/-1}
+.cs-card h3{
+  font-size:11px;letter-spacing:.15em;text-transform:uppercase;color:var(--faint);
+  margin-bottom:14px;font-weight:600;
+}
+.cs-lead{font-family:var(--serif);font-size:22px;color:var(--ink);margin-bottom:14px}
+.cs-lead b{color:var(--gold);margin-left:4px}
+.cs-lead span{font-family:var(--sans);font-size:12px;color:var(--faint);margin-left:6px}
+.cs-lead-plain{font-size:14px;color:var(--dim);margin-bottom:14px;line-height:1.5}
+.cs-note{margin-top:14px;font-size:12px;color:var(--faint);line-height:1.5}
+.cs-note b{color:var(--dim)}
+.cs-empty{font-size:14px;color:var(--faint);line-height:1.55}
+.cs-h{
+  font-family:var(--serif);font-size:clamp(24px,3vw,32px);color:var(--ink);
+  margin:clamp(32px,6vh,60px) 0 0;
+}
+
+.cs-bars{display:flex;flex-direction:column;gap:9px}
+.cs-bar{display:grid;grid-template-columns:minmax(70px,auto) 1fr auto auto;
+  align-items:center;gap:10px}
+.cs-bar-label{font-size:13px;color:var(--dim);white-space:nowrap;
+  overflow:hidden;text-overflow:ellipsis}
+.cs-bar-track{height:6px;border-radius:999px;background:var(--raise-2);overflow:hidden}
+.cs-bar-fill{display:block;height:100%;border-radius:999px;background:var(--ghost)}
+.cs-bar.is-fav .cs-bar-label{color:var(--ink)}
+.cs-bar.is-fav .cs-bar-fill{background:var(--gold)}
+.cs-bar-num{font-family:var(--serif);font-size:16px;color:var(--ink);min-width:2.2em;text-align:right}
+.cs-bar-count{font-size:11px;color:var(--faint);white-space:nowrap}
+
+.cs-people{display:flex;flex-direction:column;gap:12px}
+.cs-person{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:12px}
+.cs-person-genre{font-size:13px;color:var(--dim);text-align:right;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cs-person b{font-family:var(--serif);font-size:18px;color:var(--gold)}
+
+.cs-who{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:14px}
+.cs-rank{display:flex;flex-direction:column;gap:2px;list-style:none}
+.cs-rank li{
+  display:grid;grid-template-columns:24px 1fr auto 52px;
+  align-items:center;gap:12px;
+  padding:7px 6px;border-bottom:1px solid var(--rule);
+}
+.cs-rank li:last-child{border-bottom:none}
+.cs-rank-n{font-size:12px;color:var(--faint);text-align:right}
+.cs-rank-title{
+  text-align:left;font-size:14px;color:var(--dim);min-width:0;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  transition:color .2s var(--ease);
+}
+.cs-rank-title:hover{color:var(--ink)}
+.cs-rank-score{font-family:var(--serif);font-size:17px;color:var(--ink)}
+/* Расхождение — единственное место, где нужен цвет-оценка: плюс наверх,
+   минус вниз, ноль остаётся серым. */
+.cs-rank-diff{font-size:12px;color:var(--faint);text-align:right;white-space:nowrap}
+.cs-rank-diff.up{color:#5f8f6a}
+.cs-rank-diff.down{color:var(--gold)}
+
+.cs-gr{display:flex;flex-direction:column;gap:2px}
+.cs-gr-row{
+  display:grid;grid-template-columns:1fr auto 52px;align-items:center;gap:12px;
+  padding:8px 6px;border-bottom:1px solid var(--rule);
+}
+.cs-gr-row:last-child{border-bottom:none}
+.cs-gr-title{
+  text-align:left;font-size:14px;color:var(--dim);min-width:0;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  transition:color .2s var(--ease);
+}
+.cs-gr-title:hover{color:var(--ink)}
+.cs-gr-pair{display:inline-flex;align-items:baseline;gap:5px;white-space:nowrap}
+.cs-gr-pair b + .cs-gr-vs{margin-left:9px}
+.cs-gr-pair b{font-family:var(--serif);font-size:17px;color:var(--ink)}
+.cs-gr-them{color:var(--dim)}
+.cs-gr-vs{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--faint)}
+
+.cs-notes ul{list-style:none;display:flex;flex-direction:column;gap:10px}
+.cs-notes li{
+  position:relative;padding-left:18px;
+  font-size:15px;line-height:1.55;color:var(--dim);
+}
+.cs-notes li::before{
+  content:"";position:absolute;left:2px;top:.62em;
+  width:5px;height:5px;border-radius:50%;background:var(--gold);opacity:.55;
+}
+
+@media (max-width:620px){
+  .cs-stat{padding:13px 14px}
+  .cs-bar{grid-template-columns:minmax(58px,auto) 1fr auto}
+  .cs-bar-count{display:none}
+  .cs-rank li{grid-template-columns:20px 1fr auto 46px;gap:8px}
+  .cs-gr-row{grid-template-columns:1fr auto;row-gap:4px}
+  .cs-gr-row .cs-rank-diff{grid-column:2;text-align:right}
+}
+
 /* ── итоги года (лонгрид) ─────────────────────────────────────────────── */
 .yr{padding-bottom:120px}
 .yr-hero{
@@ -916,7 +1049,7 @@ img{max-width:100%;display:block}
 
 /* ── адаптив ──────────────────────────────────────────────────────────── */
 @media (max-width:1050px){
-  .tb-sort select{max-width:150px}
+  .tb-sort select{max-width:170px}
   .book-page{grid-template-columns:1fr;gap:30px}
   .bp-left{position:static;max-width:230px}
   .lines-grid{columns:1}
@@ -934,7 +1067,7 @@ img{max-width:100%;display:block}
    иконки — он разворачивается обратно, как только в него встают курсором. */
 @media (max-width:820px){
   .tb-sort > .ic{display:none}
-  .tb-sort select{max-width:126px}
+  .tb-sort select{max-width:146px}
   /* На узкой строке кнопке хватает одного плюса — подпись прячем. */
   .tb-add{padding:0;width:var(--ctl-h);justify-content:center}
   .tb-add .tb-add-label{display:none}
@@ -961,21 +1094,21 @@ img{max-width:100%;display:block}
   }
   .tb-search:focus-within{flex:1 1 auto}
   .tb-search:focus-within input{width:auto;flex:1 1 auto;padding-left:2px}
-  /* Полоса жанров не должна схлопнуться в ноль — край чипа виден всегда,
-     иначе о том, что список прокручивается, невозможно догадаться. Но и
-     распирать строку она не должна, поэтому минимум привязан к ширине окна. */
-  .tb-genres{min-width:clamp(40px,12vw,64px)}
-  .tb-sort select{max-width:104px}
+  .tb-sort select{max-width:124px}
 }
 
 @media (max-width:430px){
   /* Самые узкие экраны: панель всё ещё в строку, но сортировка ужимается
      до «Сначала…» — полный текст всё равно виден в раскрытом списке. */
-  .tb-sort select{max-width:72px}
+  .tb-sort select{max-width:92px}
 }
 @media (max-width:620px){
-  .mainnav{gap:0}
-  .navlink{padding:6px 9px;font-size:12px}
+  /* Меню стоит по центру страницы, и в одну строку с кнопкой редактора оно
+     уже не помещается: разрешаем ему перенос — на самых узких экранах
+     разделы встают в два ряда, но ничего не уезжает за край. */
+  .topbar{gap:8px}
+  .mainnav{gap:0;flex-wrap:wrap;justify-content:center;min-width:0}
+  .navlink{padding:6px 8px;font-size:12px}
   .editor-btn{padding:5px 9px}
   .editor-btn-label{display:none}
   .imp{grid-template-columns:1fr;gap:10px}

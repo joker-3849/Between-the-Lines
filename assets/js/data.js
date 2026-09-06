@@ -208,6 +208,86 @@ export function genres(books = state.books) {
   return seen.sort((a, b) => a.localeCompare(b, 'ru'));
 }
 
+/* ── аналитика ────────────────────────────────────────────────────────
+   Всё, что «Хроника» и «Итоги года» показывают о клубе целиком, считается
+   здесь и из тех же оценок, что и остальное: ни одна сводка не хранится в
+   файле и потому не может разойтись с данными после правки книги. */
+
+/** Сколько страниц прочитано. Книги без указанного объёма просто не в счёт. */
+export function pagesRead(books = state.books) {
+  return books.reduce((a, b) => a + (Number(b.pages) || 0), 0);
+}
+
+/** Средняя оценка клуба: среднее из средних по книгам. */
+export function clubMean(books = state.books) {
+  const vals = books.map(b => avg(b)).filter(v => v != null);
+  if (!vals.length) return null;
+  return vals.reduce((a, b) => a + b, 0) / vals.length;
+}
+
+/**
+ * Жанры со счётом, объёмом и средней оценкой, от частого к редкому.
+ * scoreOf позволяет считать то же самое глазами одной участницы —
+ * достаточно передать b => memberScore(b, id).
+ */
+export function genreStats(books = state.books, scoreOf = avg) {
+  const map = new Map();
+  books.forEach(b => {
+    const g = b.genre || 'Без жанра';
+    if (!map.has(g)) map.set(g, { genre: g, count: 0, pages: 0, sum: 0, rated: 0 });
+    const row = map.get(g);
+    row.count++;
+    row.pages += Number(b.pages) || 0;
+    const v = scoreOf(b);
+    if (typeof v === 'number') { row.sum += v; row.rated++; }
+  });
+  return [...map.values()]
+    .map(r => ({ ...r, mean: r.rated ? r.sum / r.rated : null }))
+    .sort((a, b) => b.count - a.count || a.genre.localeCompare(b.genre, 'ru'));
+}
+
+/**
+ * Любимый жанр — с самой высокой средней оценкой. Жанры с единственной
+ * книгой в счёт не идут, пока есть хоть один с двумя: одна восьмёрка ещё
+ * не делает жанр любимым, она делает любимой книгу.
+ */
+export function favouriteGenre(books = state.books, scoreOf = avg) {
+  const rows = genreStats(books, scoreOf).filter(r => r.mean != null);
+  if (!rows.length) return null;
+  const solid = rows.filter(r => r.rated >= 2);
+  return (solid.length ? solid : rows)
+    .reduce((a, b) => (b.mean > a.mean || (b.mean === a.mean && b.count > a.count) ? b : a));
+}
+
+/**
+ * Оценка Goodreads в баллах клуба. Там пятибалльная шкала, у нас своя,
+ * поэтому сравнивать в лоб нельзя — приводим к своей.
+ *
+ * Само число проставляется руками в карточке книги: у Goodreads нет
+ * открытого API, а страницу оттуда браузер прочитать не даст.
+ */
+export const GOODREADS_SCALE = 5;
+
+export function goodreadsScore(book) {
+  const g = Number(book.goodreads);
+  if (!g) return null;
+  return g / GOODREADS_SCALE * (state.club.scale || 10);
+}
+
+/** Книги, у которых есть и своя оценка, и Goodreads, — только их и сравниваем. */
+export function goodreadsPairs(books = state.books) {
+  return books
+    .map(b => ({ book: b, ours: avg(b), theirs: goodreadsScore(b) }))
+    .filter(x => x.ours != null && x.theirs != null)
+    .map(x => ({ ...x, diff: x.ours - x.theirs }));
+}
+
+/** Сводка по году: сколько книг, страниц и какая средняя оценка. */
+export function yearStats(year, books = state.books) {
+  const list = books.filter(b => yearOf(b) === year);
+  return { year, list, count: list.length, pages: pagesRead(list), mean: clubMean(list) };
+}
+
 export function yearOf(book) {
   return Number(String(book.discussed).slice(0, 4));
 }

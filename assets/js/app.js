@@ -45,9 +45,11 @@ function setView(name) {
   updateTopbar();
 }
 
+/* Логотип въезжает в шапку, только когда страницу пролистали: наверху
+   любой страницы название и так есть — крупным заголовком на полке, шапкой
+   раздела на остальных, — и дублировать его в панели незачем. */
 function updateTopbar() {
-  const compact = currentView !== 'shelf' || window.scrollY > 90;
-  document.getElementById('topbar').classList.toggle('compact', compact);
+  document.getElementById('topbar').classList.toggle('compact', window.scrollY > 60);
 }
 
 function openBook(id, coverEl) {
@@ -152,14 +154,13 @@ function fail(message) {
     liveNotice();
   });
 
+  // Логотип живёт внутри меню и ведёт туда же, куда «Полка», — отдельный
+  // обработчик ему не нужен, нужен только отменённый переход по href.
   document.getElementById('mainnav').addEventListener('click', e => {
     const b = e.target.closest('[data-view]');
-    if (b) goto(b.dataset.view);
-  });
-
-  document.querySelector('.wordmark').addEventListener('click', e => {
+    if (!b) return;
     e.preventDefault();
-    goto('shelf');
+    goto(b.dataset.view);
   });
 
   document.getElementById('backBtn').addEventListener('click', () => {

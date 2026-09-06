@@ -1,5 +1,5 @@
 /* Полка: семь книг лицом, до пяти следующих — стопкой, остальные (если
-   вдруг наберётся) не показываем вовсе. Плюс поиск, жанры и сортировка. */
+   вдруг наберётся) не показываем вовсе. Плюс поиск и сортировка. */
 
 import { state, avg, spread, genres, fmtDate, nPlural, nextMeeting, num } from './data.js';
 import { coverHTML, esc } from './ui.js';
@@ -11,7 +11,7 @@ import { bookcaseHTML } from './bookcase.js';
 const FACE_OUT = 7;          // сколько книг стоят лицом, прежде чем начнётся стопка
 const PILE_MAX = 5;          // сколько книг видно в стопке; остальные просто не показываем
 
-const ui = { genre: 'Всё', sort: 'date-desc', query: '', pileOpen: false };
+const ui = { sort: 'date-desc', query: '', pileOpen: false };
 
 let onOpen = () => {};
 
@@ -38,7 +38,6 @@ const SORTS = {
 function visibleBooks() {
   const q = ui.query.trim().toLowerCase();
   return state.books
-    .filter(b => ui.genre === 'Всё' || b.genre === ui.genre)
     .filter(b => !q || `${b.title} ${b.author}`.toLowerCase().includes(q))
     .sort(SORTS[ui.sort] || SORTS['date-desc']);
 }
@@ -81,25 +80,8 @@ function renderHead() {
 /* ── панель ───────────────────────────────────────────────────────────── */
 
 function renderToolbar() {
-  const box = document.getElementById('genres');
-  const list = ['Всё', ...genres()];
-  box.innerHTML = list.map(g =>
-    `<button class="chip" data-genre="${esc(g)}" aria-pressed="${g === ui.genre}">${esc(g)}</button>`
-  ).join('');
-  requestAnimationFrame(() => syncGenreFade(box));
-
   // Без режима редактора полка только для чтения — кнопки добавления нет.
   document.getElementById('addBookBtn').hidden = !editorMode();
-}
-
-/* Полоса жанров прокручивается вбок, и понять это можно только по
-   растушёванному краю — поэтому он появляется ровно с той стороны, где
-   ещё остались невидимые чипы, и пропадает, когда прокручивать некуда. */
-function syncGenreFade(box = document.getElementById('genres')) {
-  if (!box) return;
-  const max = box.scrollWidth - box.clientWidth;
-  box.classList.toggle('can-left', box.scrollLeft > 2);
-  box.classList.toggle('can-right', box.scrollLeft < max - 2);
 }
 
 /* ── полка ────────────────────────────────────────────────────────────── */
@@ -288,55 +270,6 @@ export function refitShelf() {
   fitFrontRow(front, lastFrontCount);
 }
 
-/* Полосу жанров можно листать тремя способами: колесом мыши (её обычная
-   вертикальная прокрутка переводится в горизонтальную), перетаскиванием
-   курсором и, как и раньше, тачем. Клик по чипу при этом не должен
-   срабатывать после протаскивания — отсюда порог в несколько пикселей. */
-function wireGenreDrag(box) {
-  box.addEventListener('wheel', e => {
-    // Тачпады шлют и deltaX — им ничего переводить не нужно.
-    if (Math.abs(e.deltaY) <= Math.abs(e.deltaX)) return;
-    const max = box.scrollWidth - box.clientWidth;
-    if (max <= 0) return;
-    box.scrollLeft += e.deltaY;
-    e.preventDefault();
-  }, { passive: false });
-
-  let startX = 0, startScroll = 0, dragging = false, moved = 0;
-
-  box.addEventListener('pointerdown', e => {
-    if (e.pointerType === 'touch' || e.button !== 0) return;  // тач листает сам
-    dragging = true; moved = 0;
-    startX = e.clientX;
-    startScroll = box.scrollLeft;
-    box.setPointerCapture(e.pointerId);
-  });
-
-  box.addEventListener('pointermove', e => {
-    if (!dragging) return;
-    const dx = e.clientX - startX;
-    if (!box.classList.contains('dragging') && Math.abs(dx) > 4) {
-      box.classList.add('dragging');   // с этого момента это уже не клик
-    }
-    moved = Math.max(moved, Math.abs(dx));
-    box.scrollLeft = startScroll - dx;
-  });
-
-  const end = e => {
-    if (!dragging) return;
-    dragging = false;
-    box.classList.remove('dragging');
-    if (e.pointerId != null && box.hasPointerCapture?.(e.pointerId)) {
-      box.releasePointerCapture(e.pointerId);
-    }
-  };
-  box.addEventListener('pointerup', end);
-  box.addEventListener('pointercancel', end);
-
-  // Протащили — значит, чип не нажимали.
-  box.addEventListener('click', e => { if (moved > 4) { e.stopPropagation(); moved = 0; } }, true);
-}
-
 export function renderShelf() {
   const shelf = document.getElementById('shelf');
   const wrap = shelf.closest('.shelf-wrap');
@@ -443,15 +376,6 @@ export function initShelf(openBook) {
   renderToolbar();
   renderShelf();
 
-  document.getElementById('genres').addEventListener('click', e => {
-    const chip = e.target.closest('[data-genre]');
-    if (!chip) return;
-    ui.genre = chip.dataset.genre;
-    ui.pileOpen = false;
-    renderToolbar();
-    renderShelf();
-  });
-
   const search = document.getElementById('search');
   let t;
   search.addEventListener('input', () => {
@@ -467,14 +391,9 @@ export function initShelf(openBook) {
 
   document.getElementById('addBookBtn').addEventListener('click', openAddBookModal);
 
-
-  const genresBox = document.getElementById('genres');
-  genresBox.addEventListener('scroll', () => syncGenreFade(), { passive: true });
-  wireGenreDrag(genresBox);
-
   let resizeT;
   window.addEventListener('resize', () => {
     clearTimeout(resizeT);
-    resizeT = setTimeout(() => { refitShelf(); syncGenreFade(); }, 120);
+    resizeT = setTimeout(refitShelf, 120);
   });
 }

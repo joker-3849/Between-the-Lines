@@ -105,11 +105,21 @@ function formHTML() {
       </div>
     </div>
 
-    <div class="field">
-      <label for="nb-isbn">ISBN издания</label>
-      <input id="nb-isbn" placeholder="9780000000000" inputmode="numeric" autocomplete="off">
-      <p class="field-hint">Не обязателен: обложки у клуба свои, ISBN нужен только как
-        выходные данные конкретного издания.</p>
+    <div class="field-row">
+      <div class="field">
+        <label for="nb-isbn">ISBN издания</label>
+        <input id="nb-isbn" placeholder="9780000000000" inputmode="numeric" autocomplete="off">
+        <p class="field-hint">Не обязателен: обложки у клуба свои, ISBN нужен только как
+          выходные данные конкретного издания.</p>
+      </div>
+      <div class="field">
+        <label for="nb-goodreads">Оценка Goodreads</label>
+        <input id="nb-goodreads" type="number" step="0.01" min="0" max="5"
+          placeholder="4,12" inputmode="decimal" autocomplete="off">
+        <p class="field-hint">Из пяти, как там и написано. Автоматически её не достать —
+          Goodreads не отдаёт оценки наружу, поэтому число вписывается руками.
+          С ним книга попадёт в сравнение в «Хронике».</p>
+      </div>
     </div>
 
     <div class="art-row">
@@ -202,6 +212,13 @@ function buildReviews(form) {
   return reviews;
 }
 
+/* Оценка Goodreads: пятибалльная, с запятой или точкой. Всё, что выходит за
+   шкалу или не число, — как будто её не вводили: пустое поле честнее вранья. */
+export function grVal(raw) {
+  const v = Number(String(raw).replace(',', '.'));
+  return Number.isFinite(v) && v > 0 && v <= 5 ? Number(v.toFixed(2)) : null;
+}
+
 function submitForm(form) {
   const val = id => document.getElementById(id).value.trim();
   const title = val('nb-title');
@@ -230,6 +247,7 @@ function submitForm(form) {
     coverQuery: `${title} ${author}`,
     cover: null,
     isbn: isbnRaw || null,
+    goodreads: grVal(val('nb-goodreads')),
     reviews: buildReviews(form)
   };
 

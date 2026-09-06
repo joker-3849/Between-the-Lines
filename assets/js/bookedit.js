@@ -12,7 +12,7 @@ import { state, memberScore, num, dropBook, markDirty } from './data.js';
 import { coverHTML, avatarHTML, esc,
          scorePickerHTML, rereadPickerHTML, wirePickers, readPicked, pickedMean } from './ui.js';
 import { icon, hydrateIcons } from './icons.js';
-import { showBookJSON } from './addbook.js';
+import { showBookJSON, grVal } from './addbook.js';
 
 let onDone = () => {};
 let book = null;
@@ -50,7 +50,14 @@ function factsFormHTML() {
         value="${known ? '' : esc(book.genre ?? '')}" ${known ? 'hidden' : ''}>
     </div>
     ${field('edition', 'Издание', book.edition)}
-    ${field('isbn', 'ISBN издания', book.isbn, 'inputmode="numeric"')}
+    <div class="field-row">
+      ${field('isbn', 'ISBN издания', book.isbn, 'inputmode="numeric"')}
+      ${field('goodreads', 'Оценка Goodreads', book.goodreads,
+        'type="number" step="0.01" min="0" max="5" inputmode="decimal" placeholder="4,12"')}
+    </div>
+    <p class="field-hint" style="margin-top:-6px">Оценка Goodreads — из пяти. Достать её
+      автоматически нельзя, поэтому впишите руками: с ней книга попадёт в сравнение
+      «клуб и Goodreads» в «Хронике».</p>
     <div class="field">
       <label for="be-discussed">Дата обсуждения</label>
       <input id="be-discussed" type="date" value="${esc(book.discussed ?? '')}">
@@ -229,6 +236,7 @@ function save(form) {
     genre: genre || 'Без жанра',
     edition: v('edition'),
     isbn: v('isbn').replace(/[^0-9Xx]/g, '') || null,
+    goodreads: grVal(v('goodreads')),
     discussed: v('discussed') || book.discussed,
     proposedBy: form.querySelector('#be-by').value || null,
     reviews: collectReviews(form)
