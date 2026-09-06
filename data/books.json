@@ -774,6 +774,20 @@
     "coverQuery": "тест 2 тест 2",
     "cover": null,
     "isbn": null,
-    "reviews": {}
+    "reviews": {
+      "tanya": {
+        "scores": {
+          "plot": 6,
+          "characters": 6,
+          "style": 6,
+          "themes": 6,
+          "emotion": 6
+        },
+        "reread": null,
+        "text": "",
+        "line": null,
+        "quote": null
+      }
+    }
   }
 ]
