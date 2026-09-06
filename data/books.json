@@ -810,5 +810,26 @@
     "cover": null,
     "isbn": null,
     "reviews": {}
+  },
+  {
+    "id": "privet",
+    "title": "Привет",
+    "author": "Привет",
+    "year": null,
+    "pages": null,
+    "genre": "Детектив",
+    "edition": "",
+    "art": {
+      "bg": "#141c1a",
+      "fg": "#e2f0ea",
+      "acc": "#4fae8f",
+      "motif": "grid"
+    },
+    "discussed": "2026-09-06",
+    "proposedBy": null,
+    "coverQuery": "Привет Привет",
+    "cover": null,
+    "isbn": null,
+    "reviews": {}
   }
 ]
