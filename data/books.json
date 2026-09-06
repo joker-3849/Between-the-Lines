@@ -756,22 +756,22 @@
     }
   },
   {
-    "id": "test",
-    "title": "тест",
-    "author": "тест",
+    "id": "test-2",
+    "title": "тест 2",
+    "author": "тест 2",
     "year": null,
     "pages": null,
     "genre": "Детектив",
     "edition": "",
     "art": {
-      "bg": "#1f1710",
-      "fg": "#f2e6d2",
-      "acc": "#d99a3e",
-      "motif": "sun"
+      "bg": "#141c1a",
+      "fg": "#e2f0ea",
+      "acc": "#4fae8f",
+      "motif": "frame"
     },
     "discussed": "2026-09-06",
     "proposedBy": null,
-    "coverQuery": "тест тест",
+    "coverQuery": "тест 2 тест 2",
     "cover": null,
     "isbn": null,
     "reviews": {}
