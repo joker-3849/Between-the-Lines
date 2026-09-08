@@ -61,11 +61,15 @@ function draftBannerHTML(book) {
   </div>`;
 }
 
-const sayLineHTML = (line, label) => !line?.text ? '' :
-  `<blockquote class="say-line">
-     <p>«${esc(line.text)}»</p>
-     <span class="say-tag">${esc(label)}</span>
-   </blockquote>`;
+/* Выписанная строчка — отдельный блок, а не хвост впечатления: это не часть
+   отзыва, а то, что человек забрал с собой, и мешать их в одном абзаце
+   значит терять и то, и другое. */
+const sayLineHTML = (m, line, label) => !line?.text ? '' :
+  `<figure class="say-line">
+     <blockquote>«${esc(line.text)}»</blockquote>
+     <figcaption>${avatarHTML(m)}<span>${esc(m.name)}</span>
+       <span class="say-tag">${esc(label)}</span></figcaption>
+   </figure>`;
 
 /**
  * Впечатления по людям. Раньше одно и то же мнение было разорвано на три
@@ -81,22 +85,31 @@ function saysHTML(book) {
       mean != null || rev?.text || rev?.quote?.text || rev?.line?.text);
   if (!items.length) return '';
 
+  const said = items.map(({ m, rev, mean }) => `
+    <article class="say" style="--c:${esc(m.color)}">
+      <header class="say-head">
+        ${avatarHTML(m)}
+        <span class="say-name">${esc(m.name)}</span>
+        ${mean == null ? '' :
+          `<span class="say-score">${num(mean)}<small>/${scale()}</small></span>`}
+        ${rev?.reread == null ? '' :
+          `<span class="say-rr ${rev.reread ? 'yes' : 'no'}">${
+            rev.reread ? 'перечитает' : 'не перечитает'}</span>`}
+      </header>
+      ${rev?.text ? `<p class="say-text">${esc(rev.text)}</p>` : ''}
+    </article>`).join('');
+
+  // Строчки идут своим разделом: цитата из книги и своя формулировка — это
+  // разные вещи, и подпись под каждой говорит, кто её выписал.
+  const lines = items.flatMap(({ m, rev }) => [
+    sayLineHTML(m, rev?.quote, 'цитата из книги'),
+    sayLineHTML(m, rev?.line, 'своими словами')
+  ]).filter(Boolean).join('');
+
   return `<h2 class="section-h">Впечатления</h2>
-    <div class="says">${items.map(({ m, rev, mean }) => `
-      <article class="say" style="--c:${esc(m.color)}">
-        <header class="say-head">
-          ${avatarHTML(m)}
-          <span class="say-name">${esc(m.name)}</span>
-          ${mean == null ? '' :
-            `<span class="say-score">${num(mean)}<small>/${scale()}</small></span>`}
-          ${rev?.reread == null ? '' :
-            `<span class="say-rr ${rev.reread ? 'yes' : 'no'}">${
-              rev.reread ? 'перечитает' : 'не перечитает'}</span>`}
-        </header>
-        ${rev?.text ? `<p class="say-text">${esc(rev.text)}</p>` : ''}
-        ${sayLineHTML(rev?.quote, 'цитата из книги')}
-        ${sayLineHTML(rev?.line, 'своими словами')}
-      </article>`).join('')}</div>`;
+    <div class="says">${said}</div>
+    ${lines ? `<h2 class="section-h">Что забрали с собой</h2>
+      <div class="say-lines">${lines}</div>` : ''}`;
 }
 
 function render(book) {
@@ -111,8 +124,8 @@ function render(book) {
       <div class="bp-meta">
         ${factsHTML(book)}
         <div class="bp-actions">
-          <button type="button" class="btn btn-ghost" id="shareBook">
-            <span class="ic" data-icon="share"></span> Поделиться
+          <button type="button" class="btn btn-primary" id="shareBook">
+            <span class="ic" data-icon="share"></span> Поделиться книгой
           </button>
           ${editorMode() ? `<button type="button" class="btn btn-ghost" id="editBook">
             <span class="ic" data-icon="pencil"></span> Внести изменения

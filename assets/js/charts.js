@@ -231,9 +231,10 @@ export function rankHTML(book) {
  * между колонками. В таблице критерии стоят столбцами, участницы —
  * строками, и лишний человек добавляет одну строку, а не целую карточку.
  *
- * Насыщенность заливки клетки — сама оценка, цвет — цвет участницы: тот же,
- * что у её линии на радаре, так что строка читается как продолжение
- * легенды соседнего виджета.
+ * Столбцы одинаковой ширины (кроме первого, с именем): иначе ширину задаёт
+ * длина подписи, «Персонажи» растягивает свой столбец вдвое против «Идей»,
+ * и таблица выглядит собранной наспех. Число столбцов приходит в --cols:
+ * критерии берутся из club.json, и минимальная ширина считается по ним.
  */
 export function scoreTableHTML(book) {
   const rated = state.members
@@ -249,18 +250,14 @@ export function scoreTableHTML(book) {
     const cells = state.criteria.map(c => {
       const v = memberScore(book, m.id, c.id);
       if (v == null) return '<td class="st-cell"><span class="st-none">—</span></td>';
-      const fill = Math.round(14 + (v / scale()) * 46);   // от бледной к плотной
       return `<td class="st-cell" title="${esc(c.label)}: ${v} из ${scale()}">
-        <span class="st-v" style="--fill:${fill}%">${v}</span>
+        <span class="st-v">${v}</span>
       </td>`;
     }).join('');
 
-    const rr = book.reviews?.[m.id]?.reread;
-    return `<tr style="--c:${esc(m.color)}">
+    return `<tr>
       <th scope="row" class="st-who">
-        ${avatarHTML(m)}<span>${esc(m.name)}</span>
-        ${rr == null ? '' : `<i class="st-rr ${rr ? 'yes' : 'no'}" title="${
-          rr ? 'перечитает' : 'не перечитает'}"></i>`}
+        <span class="st-who-in">${avatarHTML(m)}<span>${esc(m.name)}</span></span>
       </th>
       ${cells}
       <td class="st-mean">${num(mean)}</td>
@@ -271,7 +268,7 @@ export function scoreTableHTML(book) {
     <div class="wg-label">Кто как оценил</div>
     <div class="wg-body">
       <div class="st-scroll">
-        <table class="st">
+        <table class="st" style="--cols:${state.criteria.length + 1}">
           <thead><tr><th></th>${head}<th class="st-mean">Средний</th></tr></thead>
           <tbody>${rows}</tbody>
         </table>

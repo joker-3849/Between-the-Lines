@@ -129,13 +129,18 @@ img{max-width:100%;display:block}
 }
 .wm-the{font-style:italic;color:var(--faint)}
 
+/* Тот же контур, что и у «Редактора»: это парные кнопки по краям шапки, и
+   голая строчка слева читалась рядом с обведённой кнопкой справа как
+   недоделанная. */
 .topbar-back{
   grid-column:1;justify-self:start;
-  display:inline-flex;align-items:center;gap:8px;
-  font-size:13px;color:var(--dim);letter-spacing:.02em;
-  transition:color .2s var(--ease);
+  display:inline-flex;align-items:center;gap:7px;
+  font-size:13px;color:var(--faint);letter-spacing:.02em;white-space:nowrap;
+  padding:5px 13px;border:1px solid var(--rule);border-radius:999px;
+  transition:color .2s var(--ease),border-color .2s var(--ease);
 }
-.topbar-back:hover{color:var(--ink)}
+.topbar-back .ic{width:14px;height:14px}
+.topbar-back:hover{color:var(--ink);border-color:var(--ghost)}
 /* grid-area держит колонку за кнопкой, даже когда её нет, — иначе меню
    переезжает в первую колонку и вордмарк снова уходит с центра. */
 .topbar-back[hidden]{display:none}
@@ -689,17 +694,29 @@ img{max-width:100%;display:block}
   font-family:var(--serif);font-size:17px;line-height:1.55;
   color:rgba(43,28,20,.92);
 }
+/* Строчки — свой раздел под впечатлениями и своя кладка: цитата живёт
+   отдельно от отзыва, у неё другой голос и другой размер. */
+.say-lines{columns:2;column-gap:clamp(12px,1.6vw,20px)}
 .say-line{
-  margin-top:16px;padding-left:16px;
-  border-left:1px solid var(--rule);
+  break-inside:avoid;
+  margin-bottom:clamp(12px,1.6vw,20px);
+  padding:18px clamp(16px,2vw,22px) 18px;
+  border:1px solid var(--rule);border-radius:20px;
+  background:var(--void-2);
+  box-shadow:0 8px 22px rgba(var(--shadow),.05);
+  border-left:3px solid var(--c,var(--rule));
 }
-.say-line p{
+.say-line blockquote{
   font-family:var(--serif);font-style:italic;
-  font-size:17px;line-height:1.5;color:var(--dim);
+  font-size:19px;line-height:1.45;color:rgba(43,28,20,.86);
+}
+.say-line figcaption{
+  display:flex;align-items:center;gap:8px;flex-wrap:wrap;
+  margin-top:14px;font-size:13px;color:var(--dim);
 }
 .say-tag{
-  display:block;margin-top:7px;
   font-size:10px;letter-spacing:.13em;text-transform:uppercase;color:var(--faint);
+  border:1px solid var(--rule);border-radius:999px;padding:2px 9px;
 }
 
 .who{display:flex;align-items:center;gap:9px}
@@ -1144,30 +1161,7 @@ img{max-width:100%;display:block}
   .editor-btn-label{display:none}
   .yr-bar{grid-template-columns:96px 1fr 30px}
   /* Впечатления в один столбец: на телефоне колонка кладки шириной с ладонь. */
-  .says{columns:1}
-  /* Таблицу оценок ужимаем, чтобы она помещалась целиком: подписи критериев
-     короткие, а клетки — ровно под двузначное число. */
-  .st th,.st td{padding:6px 3px}
-  .st thead th{font-size:9px;letter-spacing:.03em}
-  /* Имя тоже держится у края: без него прокрученная строка — просто пять
-     чисел неизвестно чьих. */
-  .st-who{
-    position:sticky;left:0;z-index:1;
-    padding-right:8px !important;gap:6px;font-size:13px;
-    background:var(--void-2);
-    box-shadow:9px 0 9px -9px rgba(58,32,20,.22);
-  }
-  .st thead th:first-child{position:sticky;left:0;z-index:1;background:var(--void-2)}
-  .st-v{min-width:28px;height:26px;padding:0 5px;font-size:13px}
-  /* Средний балл остаётся у правого края, пока критерии прокручиваются вбок:
-     это то число, ради которого таблицу и открывают, и уезжать за экран ему
-     нельзя. Фон непрозрачный — под ним проходят клетки. */
-  .st-mean{
-    position:sticky;right:0;z-index:1;
-    font-size:17px;background:var(--void-2);
-    padding-left:9px !important;
-    box-shadow:-9px 0 9px -9px rgba(58,32,20,.22);
-  }
+  .says,.say-lines{columns:1}
   /* Кнопки под данными книги встают в строку и по содержимому: растянутая
      на всю колонку «Поделиться» выглядит как поле ввода, а не как кнопка. */
   .bp-actions{flex-direction:row;flex-wrap:wrap}
@@ -1633,42 +1627,88 @@ input[type="number"]{-moz-appearance:textfield}
     radial-gradient(farthest-side at 0 50%,rgba(58,32,20,.16),rgba(58,32,20,0)) left / 11px 100% no-repeat scroll,
     radial-gradient(farthest-side at 100% 50%,rgba(58,32,20,.16),rgba(58,32,20,0)) right / 11px 100% no-repeat scroll;
 }
-.st{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
-.st th,.st td{padding:7px 6px;font-weight:400}
+/* fixed — ради одинаковых столбцов: при автоматической раскладке ширину
+   задаёт самая длинная подпись, и «Персонажи» занимают вдвое больше «Идей».
+   Первому столбцу ширина задана явно (там имя), остальные делят остаток
+   поровну. Минимум по числу столбцов: ниже него подписи начали бы налезать
+   друг на друга, поэтому таблица уезжает вбок. */
+.st{
+  /* Ширины подобраны по самой длинной подписи критерия («Персонажи» —
+     88px вместе с отступами): столбцы одинаковые, и в них должна помещаться
+     любая из подписей, иначе смысл равенства теряется. */
+  --st-first:124px;   /* столбец с именем */
+  --st-col:82px;      /* все остальные, включая средний балл */
+  width:100%;
+  min-width:calc(var(--st-first) + var(--cols,6) * var(--st-col));
+  table-layout:fixed;border-collapse:collapse;
+  font-variant-numeric:tabular-nums;
+}
+.st th,.st td{padding:7px 4px;font-weight:400}
+.st thead th:first-child{width:var(--st-first)}
 .st thead th{
-  font-size:10px;letter-spacing:.11em;text-transform:uppercase;color:var(--faint);
+  font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--faint);
   text-align:center;white-space:nowrap;
+  overflow:hidden;text-overflow:ellipsis;
   border-bottom:1px solid var(--rule);
   padding-bottom:10px;
 }
-.st thead th:first-child{width:1%}
 .st tbody tr + tr th,.st tbody tr + tr td{border-top:1px solid var(--rule)}
+/* Имя остаётся обычной ячейкой таблицы — иначе при table-layout:fixed оно
+   выпадает из раскладки колонки; флексом выложено содержимое внутри. */
 .st-who{
-  display:flex;align-items:center;gap:8px;
-  font-size:14px;color:var(--dim);text-align:left;white-space:nowrap;
+  font-size:14px;color:var(--dim);text-align:left;
   padding-right:14px !important;
 }
-/* Точка «перечитаешь?» — вся отметка целиком: в строке на неё нет места,
-   а подпись есть в подсказке и в блоке впечатлений ниже. */
-.st-rr{width:7px;height:7px;border-radius:50%;flex:0 0 auto}
-.st-rr.yes{background:var(--rr-yes)}
-.st-rr.no{background:var(--rr-no)}
+.st-who-in{display:inline-flex;align-items:center;gap:8px;white-space:nowrap}
 .st-cell{text-align:center}
+/* Плашка под числом нейтральная: цветом здесь кодировать нечего — оценки
+   и так стоят столбцами и сравниваются глазом, а разноцветные клетки
+   превращали таблицу в мозаику. */
 .st-v{
   display:inline-flex;align-items:center;justify-content:center;
   min-width:34px;height:28px;padding:0 8px;
   border-radius:9px;
-  /* Плотность заливки — сама оценка, цвет — цвет участницы. */
-  background:color-mix(in srgb,var(--c,var(--ghost)) var(--fill,30%),transparent);
+  background:var(--raise-2);
   font-size:14px;color:var(--ink);
 }
 .st-none{color:var(--faint);font-size:13px}
+/* По центру, как и остальные столбцы: они одной ширины, и выключка вправо
+   уводила бы число от своей подписи. */
 .st-mean{
-  text-align:right;white-space:nowrap;
+  text-align:center;white-space:nowrap;
   font-family:var(--serif);font-size:19px;color:var(--gold);
 }
 .st thead .st-mean{
   font-family:var(--sans);font-size:10px;color:var(--faint);
+}
+
+/* Тот же блок, но узкий. Столбцы остаются одинаковыми, а ширину им задаёт
+   самая длинная подпись — «Персонажи»; на телефоне такая колонка съедала бы
+   полтаблицы, поэтому подписи ужимаются и при нехватке места обрезаются
+   многоточием (полное название критерия есть в подсказке клетки). Имя и
+   средний балл держатся у краёв: без них прокрученная строка — просто пять
+   чисел неизвестно чьих.
+
+   Блок стоит здесь, а не среди остального адаптива: правила таблицы идут
+   ниже по файлу и при равной специфичности перебили бы его. */
+@media (max-width:620px){
+  .st{--st-first:104px;--st-col:68px}
+  .st th,.st td{padding:6px 3px}
+  .st thead th{font-size:9px;letter-spacing:.02em}
+  .st-who{
+    position:sticky;left:0;z-index:1;
+    padding-right:8px !important;font-size:13px;
+    background:var(--void-2);
+    box-shadow:9px 0 9px -9px rgba(58,32,20,.22);
+  }
+  .st thead th:first-child{position:sticky;left:0;z-index:1;background:var(--void-2)}
+  .st-who-in{gap:6px}
+  .st-v{min-width:28px;height:26px;padding:0 5px;font-size:13px}
+  .st-mean{
+    position:sticky;right:0;z-index:1;
+    font-size:17px;background:var(--void-2);
+    box-shadow:-9px 0 9px -9px rgba(58,32,20,.22);
+  }
 }
 
 /* ══════════════════════════════════════════════════════════════════════════
