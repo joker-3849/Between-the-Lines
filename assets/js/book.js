@@ -1,9 +1,10 @@
-/* Страница книги: мнения сгруппированы по критериям, а не по участникам.
+/* Страница книги: сверху общие виджеты по книге, ниже — по блоку на
+   участницу, где её оценка, отзыв и выписанные строчки лежат вместе.
    Открывается плавным перелётом обложки с полки (FLIP). */
 
-import { state, scoresFor, fmtDate, nPlural } from './data.js';
-import { coverHTML, whoHTML, esc, stagger } from './ui.js';
-import { gaugeHTML, radarHTML, rereadRingHTML, rankHTML, memberCardsHTML } from './charts.js';
+import { state, scoresFor, memberScore, fmtDate, nPlural, num } from './data.js';
+import { coverHTML, avatarHTML, esc, stagger } from './ui.js';
+import { gaugeHTML, radarHTML, rereadRingHTML, rankHTML, scoreTableHTML } from './charts.js';
 import { hydrateIcons } from './icons.js';
 import { mountTilt, tiltWrap } from './tilt.js';
 import { coverOnShelf } from './shelf.js';
@@ -17,6 +18,8 @@ const reduced = () => window.matchMedia('(prefers-reduced-motion: reduce)').matc
 
 let deps = { setView: () => {} };
 let current = null;
+
+const scale = () => state.club.scale || 10;
 
 export function initBook(d) { deps = { ...deps, ...d }; }
 export function currentBookId() { return current; }
@@ -58,64 +61,83 @@ function draftBannerHTML(book) {
   </div>`;
 }
 
-function impressionsHTML(book) {
-  const items = state.members
-    .map(m => ({ m, text: book.reviews?.[m.id]?.text }))
-    .filter(x => x.text);
-  if (!items.length) return '';
-  return `<h2 class="section-h">Впечатления</h2>
-    ${items.map(({ m, text }) => `<div class="imp">
-      ${whoHTML(m)}
-      <p class="imp-text">${esc(text)}</p>
-    </div>`).join('')}`;
-}
+const sayLineHTML = (line, label) => !line?.text ? '' :
+  `<blockquote class="say-line">
+     <p>«${esc(line.text)}»</p>
+     <span class="say-tag">${esc(label)}</span>
+   </blockquote>`;
 
-/** Цитаты из книги и свои формулировки — два отдельных раздела. */
-function takenHTML(book, field, title) {
+/**
+ * Впечатления по людям. Раньше одно и то же мнение было разорвано на три
+ * части: балл жил в отдельной сетке карточек, впечатление — в своём разделе,
+ * выписанная строчка — ещё в двух ниже, и чтобы собрать мнение целиком,
+ * страницу приходилось листать туда-обратно. Теперь у каждой участницы один
+ * блок: оценка, «перечитаешь?», впечатление и то, что она выписала.
+ */
+function saysHTML(book) {
   const items = state.members
-    .map(m => ({ m, line: book.reviews?.[m.id]?.[field] }))
-    .filter(x => x.line?.text);
+    .map(m => ({ m, rev: book.reviews?.[m.id], mean: memberScore(book, m.id) }))
+    .filter(({ rev, mean }) =>
+      mean != null || rev?.text || rev?.quote?.text || rev?.line?.text);
   if (!items.length) return '';
-  return `<h2 class="section-h">${esc(title)}</h2>
-    <div class="taken">${items.map(({ m, line }) => `<div class="taken-item">
-      <p class="taken-text">${esc(line.text)}</p>
-      <div class="taken-from"><span>${esc(m.name)}</span></div>
-    </div>`).join('')}</div>`;
+
+  return `<h2 class="section-h">Впечатления</h2>
+    <div class="says">${items.map(({ m, rev, mean }) => `
+      <article class="say" style="--c:${esc(m.color)}">
+        <header class="say-head">
+          ${avatarHTML(m)}
+          <span class="say-name">${esc(m.name)}</span>
+          ${mean == null ? '' :
+            `<span class="say-score">${num(mean)}<small>/${scale()}</small></span>`}
+          ${rev?.reread == null ? '' :
+            `<span class="say-rr ${rev.reread ? 'yes' : 'no'}">${
+              rev.reread ? 'перечитает' : 'не перечитает'}</span>`}
+        </header>
+        ${rev?.text ? `<p class="say-text">${esc(rev.text)}</p>` : ''}
+        ${sayLineHTML(rev?.quote, 'цитата из книги')}
+        ${sayLineHTML(rev?.line, 'своими словами')}
+      </article>`).join('')}</div>`;
 }
 
 function render(book) {
   const view = document.getElementById('view-book');
+  /* Разметка нарочно разбита на четыре блока — обложка, название, данные
+     книги и всё остальное: на узком экране они раскладываются иначе (данные
+     встают справа от обложки), и переставлять их можно только целиком. */
   view.innerHTML = `<article class="book-page">
     ${draftBannerHTML(book)}
     <div class="bp-left">
-      ${tiltWrap(coverHTML(book, 'bp-cover'), 'tilt-bp')}
-      ${factsHTML(book)}
-      <div class="bp-actions">
-        <button type="button" class="btn btn-ghost" id="shareBook">
-          <span class="ic" data-icon="share"></span> Поделиться
-        </button>
-        ${editorMode() ? `<button type="button" class="btn btn-ghost" id="editBook">
-          <span class="ic" data-icon="pencil"></span> Внести изменения
-        </button>` : ''}
+      <div class="bp-figure">${tiltWrap(coverHTML(book, 'bp-cover'), 'tilt-bp')}</div>
+      <div class="bp-meta">
+        ${factsHTML(book)}
+        <div class="bp-actions">
+          <button type="button" class="btn btn-ghost" id="shareBook">
+            <span class="ic" data-icon="share"></span> Поделиться
+          </button>
+          ${editorMode() ? `<button type="button" class="btn btn-ghost" id="editBook">
+            <span class="ic" data-icon="pencil"></span> Внести изменения
+          </button>` : ''}
+        </div>
       </div>
     </div>
     <div class="bp-right">
-      <h1 class="bp-title">${esc(book.title)}</h1>
-      <p class="bp-author">${esc(book.author)}</p>
-
-      <h2 class="section-h">Оценки клуба</h2>
-      ${scoresFor(book).length ? `
-        <div class="bp-widgets">
-          ${gaugeHTML(book)}
-          ${radarHTML(book)}
-          ${rereadRingHTML(book)}
-          ${rankHTML(book)}
-        </div>
-        ${memberCardsHTML(book)}
-      ` : '<p class="bp-verdict-note">Оценок пока нет — нажмите «Внести изменения» и заполните.</p>'}
-      ${impressionsHTML(book)}
-      ${takenHTML(book, 'quote', 'Цитаты из книги')}
-      ${takenHTML(book, 'line', 'Между строк')}
+      <header class="bp-head">
+        <h1 class="bp-title">${esc(book.title)}</h1>
+        <p class="bp-author">${esc(book.author)}</p>
+      </header>
+      <div class="bp-body">
+        <h2 class="section-h">Оценки клуба</h2>
+        ${scoresFor(book).length ? `
+          <div class="bp-widgets">
+            ${gaugeHTML(book)}
+            ${radarHTML(book)}
+            ${rereadRingHTML(book)}
+            ${rankHTML(book)}
+            ${scoreTableHTML(book)}
+          </div>
+        ` : '<p class="bp-verdict-note">Оценок пока нет — нажмите «Внести изменения» и заполните.</p>'}
+        ${saysHTML(book)}
+      </div>
     </div>
   </article>`;
 
@@ -199,13 +221,18 @@ export function showBook(id, sourceCover) {
   window.scrollTo({ top: 0, behavior: 'auto' });
 
   const hero = view.querySelector('.bp-cover');
-  const right = view.querySelector('.bp-right');
+  // Появляются по очереди сами разделы, а не две обёртки: заголовок и всё,
+  // что лежит в теле страницы.
+  const rise = [
+    view.querySelector('.bp-head'),
+    ...view.querySelector('.bp-body').children
+  ].filter(Boolean);
 
   if (fromRect && sourceCover) {
     flyCover(fromRect, hero, sourceCover);
-    stagger(right.children, 45, 180);
+    stagger(rise, 45, 180);
   } else {
-    stagger(right.children, 40, 60);
+    stagger(rise, 40, 60);
   }
 }
 

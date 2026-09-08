@@ -1,5 +1,6 @@
 /* Виджеты для карточки книги: полукруглая шкала среднего балла, радар по
- * критериям и кольцо «Перечитаешь?».
+ * критериям, кольцо «Перечитаешь?», место на полке и таблица «Кто как
+ * оценил».
  *
  * Всё рисуется руками в inline-SVG: данных на книгу немного (пять критериев
  * и три-четыре человека), а тащить ради этого библиотеку в сайт без сборки
@@ -7,7 +8,7 @@
  * поэтому смена палитры не требует правок здесь. */
 
 import { state, avg, spread, verdict, scoresFor, memberScore, rereadTally, num, numPlural } from './data.js';
-import { esc } from './ui.js';
+import { esc, avatarHTML } from './ui.js';
 
 const scale = () => state.club.scale || 10;
 
@@ -223,32 +224,58 @@ export function rankHTML(book) {
 
 /* ── карточка участника: средний балл и пять мини-шкал ────────────────── */
 
-export function memberCardsHTML(book) {
-  const cards = state.members.map(m => {
-    const mean = memberScore(book, m.id);
-    if (mean == null) return '';
-    const rr = book.reviews?.[m.id]?.reread;
+/**
+ * Кто как оценил: одна таблица вместо колоды карточек по человеку.
+ * Карточки не масштабировались — вчетвером они занимали два ряда, а
+ * сравнить оценки по одному критерию можно было только глазами, прыгая
+ * между колонками. В таблице критерии стоят столбцами, участницы —
+ * строками, и лишний человек добавляет одну строку, а не целую карточку.
+ *
+ * Насыщенность заливки клетки — сама оценка, цвет — цвет участницы: тот же,
+ * что у её линии на радаре, так что строка читается как продолжение
+ * легенды соседнего виджета.
+ */
+export function scoreTableHTML(book) {
+  const rated = state.members
+    .map(m => ({ m, mean: memberScore(book, m.id) }))
+    .filter(x => x.mean != null);
+  if (!rated.length) return '';
 
-    const bars = state.criteria.map(c => {
+  const head = state.criteria
+    .map(c => `<th scope="col" title="${esc(c.label)}">${esc(c.short || c.label)}</th>`)
+    .join('');
+
+  const rows = rated.map(({ m, mean }) => {
+    const cells = state.criteria.map(c => {
       const v = memberScore(book, m.id, c.id);
-      const pct = v == null ? 0 : (v / scale()) * 100;
-      return `<div class="mb-row" title="${esc(c.label)}: ${v ?? '—'} из ${scale()}">
-        <span class="mb-name">${esc(c.short || c.label)}</span>
-        <span class="mb-track"><span class="mb-fill" style="width:${pct.toFixed(0)}%"></span></span>
-        <span class="mb-val">${v ?? '—'}</span>
-      </div>`;
+      if (v == null) return '<td class="st-cell"><span class="st-none">—</span></td>';
+      const fill = Math.round(14 + (v / scale()) * 46);   // от бледной к плотной
+      return `<td class="st-cell" title="${esc(c.label)}: ${v} из ${scale()}">
+        <span class="st-v" style="--fill:${fill}%">${v}</span>
+      </td>`;
     }).join('');
 
-    return `<article class="mcard" style="--c:${esc(m.color)}">
-      <header class="mcard-head">
-        <span class="who-dot" style="--c:${esc(m.color)}">${esc(m.initial)}</span>
-        <span class="mcard-name">${esc(m.name)}</span>
-        <span class="mcard-mean">${num(mean)}</span>
-      </header>
-      ${rr == null ? '' : `<span class="mcard-rr ${rr ? 'yes' : 'no'}">${rr ? 'перечитает' : 'не перечитает'}</span>`}
-      <div class="mcard-bars">${bars}</div>
-    </article>`;
+    const rr = book.reviews?.[m.id]?.reread;
+    return `<tr style="--c:${esc(m.color)}">
+      <th scope="row" class="st-who">
+        ${avatarHTML(m)}<span>${esc(m.name)}</span>
+        ${rr == null ? '' : `<i class="st-rr ${rr ? 'yes' : 'no'}" title="${
+          rr ? 'перечитает' : 'не перечитает'}"></i>`}
+      </th>
+      ${cells}
+      <td class="st-mean">${num(mean)}</td>
+    </tr>`;
   }).join('');
 
-  return cards ? `<div class="mcards">${cards}</div>` : '';
+  return `<div class="wg wg-table">
+    <div class="wg-label">Кто как оценил</div>
+    <div class="wg-body">
+      <div class="st-scroll">
+        <table class="st">
+          <thead><tr><th></th>${head}<th class="st-mean">Средний</th></tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>
+    </div>
+  </div>`;
 }

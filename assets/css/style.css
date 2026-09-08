@@ -245,7 +245,9 @@ img{max-width:100%;display:block}
 
 /* ── панель полки ─────────────────────────────────────────────────────── */
 /* Поиск, сортировка и «Добавить книгу» живут в одну строку и никогда не
-   переносятся: при нехватке места сжимается поиск. */
+   переносятся. Ужимается только поиск: ему длина не нужна — набранное видно
+   и в узком поле, — а у сортировки в строке стоит готовая фраза, и обрезать
+   её нельзя, иначе выбранный порядок перестаёт читаться. */
 .toolbar{
   max-width:var(--maxw);margin:clamp(18px,4vh,58px) auto 0;
   padding:0 var(--pad);
@@ -254,11 +256,12 @@ img{max-width:100%;display:block}
 .tb-add{flex:0 0 auto;height:var(--ctl-h);padding:0 18px;white-space:nowrap}
 .tb-search{
   display:flex;align-items:center;gap:9px;
-  flex:1 1 auto;
   border:1px solid var(--rule);border-radius:999px;
   background:var(--raise);
   height:var(--ctl-h);padding:0 clamp(11px,1.2vw,16px);
-  min-width:0;
+  /* Отдаёт место первым и сжимается до кружка с лупой: flex-basis нулевой,
+     а нижняя граница — собственная высота поля. */
+  flex:1 1 0;min-width:var(--ctl-h);
   color:var(--faint);
   transition:border-color .2s var(--ease),background .2s var(--ease);
 }
@@ -303,10 +306,9 @@ img{max-width:100%;display:block}
   appearance:none;-webkit-appearance:none;
   background:none;border:none;outline:none;
   font-size:14px;color:var(--dim);cursor:pointer;
-  /* Место под свою стрелку; длинный вариант обрезается многоточием, а не
-     заезжает под неё. */
+  /* Место под свою стрелку. Ширину селектор берёт по самому длинному
+     варианту и не отдаёт её никогда — обрезать здесь нечего. */
   padding-right:20px;
-  text-overflow:ellipsis;
 }
 .tb-sort select:hover{color:var(--ink)}
 .tb-sort option{background:var(--void-2);color:var(--ink)}
@@ -626,14 +628,7 @@ img{max-width:100%;display:block}
   font-family:var(--serif);font-style:italic;
   font-size:clamp(18px,2.4vw,23px);color:var(--dim);margin-top:6px;
 }
-.bp-verdict{
-  display:flex;align-items:baseline;gap:14px;flex-wrap:wrap;
-  margin:26px 0 6px;padding-bottom:20px;
-  border-bottom:1px solid var(--rule);
-}
-.bp-avg{font-family:var(--serif);font-size:52px;line-height:1;color:var(--gold)}
-.bp-avg small{font-size:19px;color:var(--faint);margin-left:2px}
-/* Осталась только заглушка «—», когда книгу ещё никто не оценил. */
+/* Заглушка, когда книгу ещё никто не оценил. */
 .bp-verdict-note{font-size:13px;color:var(--dim);max-width:34ch}
 
 .badge{
@@ -658,21 +653,55 @@ img{max-width:100%;display:block}
 }
 .bp-actions .btn{justify-content:center}
 
-/* впечатления */
-.imp{
-  border-top:1px solid var(--rule);
-  padding:20px 0;
-  display:grid;grid-template-columns:112px 1fr;gap:22px;
+/* ── впечатления ──────────────────────────────────────────────────────── */
+/* Один блок на человека: оценка, впечатление и выписанные строчки вместе.
+   Карточки того же семейства, что и виджеты выше, — светлая подложка,
+   мягкая рамка; лишний человек добавляет карточку, а не новый раздел. */
+/* Кладкой, а не сеткой: впечатления бывают и в строку, и на пол-экрана, и
+   в ряду одинаковой высоты под коротким оставалась бы дыра. */
+.says{columns:2;column-gap:clamp(12px,1.6vw,20px)}
+.say{
+  break-inside:avoid;
+  margin-bottom:clamp(12px,1.6vw,20px);
+  padding:18px clamp(16px,2vw,22px) 20px;
+  border:1px solid var(--rule);border-radius:20px;
+  background:var(--void-2);
+  box-shadow:0 8px 22px rgba(var(--shadow),.05);
+  /* Цветная кромка слева — единственное место, где цвет участницы работает
+     как метка: по нему блок сразу связывается с её линией на радаре. */
+  border-left:3px solid var(--c,var(--rule));
 }
-/* У первого впечатления верхней линии нет: сразу над ним линейка заголовка
-   «Впечатления», две черты подряд читались как ошибка. Целимся в соседа
-   заголовка, а не в :first-of-type — тот смотрит на тип тега среди всех
-   соседей, а перед .imp стоят другие div-ы. */
-.section-h + .imp{
-  border-top:none;
-  padding-top:4px;
+.say-head{display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin-bottom:12px}
+.say-name{font-family:var(--serif);font-size:20px;line-height:1;flex:1 1 auto}
+.say-score{
+  font-family:var(--serif);font-size:26px;line-height:1;color:var(--gold);
+  font-variant-numeric:tabular-nums;
 }
-.imp:last-child{border-bottom:1px solid var(--rule)}
+.say-score small{font-size:12px;color:var(--faint);margin-left:1px}
+.say-rr{
+  flex:0 0 auto;
+  font-size:10px;letter-spacing:.12em;text-transform:uppercase;
+  padding:3px 10px;border-radius:999px;
+}
+.say-rr.yes{color:var(--rr-yes);border:1px solid rgba(79,143,102,.4)}
+.say-rr.no{color:var(--rr-no);border:1px solid rgba(192,122,104,.4)}
+.say-text{
+  font-family:var(--serif);font-size:17px;line-height:1.55;
+  color:rgba(43,28,20,.92);
+}
+.say-line{
+  margin-top:16px;padding-left:16px;
+  border-left:1px solid var(--rule);
+}
+.say-line p{
+  font-family:var(--serif);font-style:italic;
+  font-size:17px;line-height:1.5;color:var(--dim);
+}
+.say-tag{
+  display:block;margin-top:7px;
+  font-size:10px;letter-spacing:.13em;text-transform:uppercase;color:var(--faint);
+}
+
 .who{display:flex;align-items:center;gap:9px}
 .who-dot{
   width:24px;height:24px;border-radius:50%;flex:0 0 auto;
@@ -680,26 +709,6 @@ img{max-width:100%;display:block}
   font-size:10px;font-weight:500;color:var(--ink);background:var(--c,#ccc);
 }
 .who-name{font-size:13px;color:var(--dim)}
-.imp-text{
-  font-family:var(--serif);font-size:19px;line-height:1.55;
-  color:rgba(43,28,20,.92);max-width:62ch;
-}
-
-/* строчки, которые забрали */
-.taken{display:grid;gap:18px}
-.taken-item{
-  border-left:1px solid var(--rule);
-  padding:2px 0 2px 22px;
-}
-.taken-text{
-  font-family:var(--serif);font-style:italic;
-  font-size:21px;line-height:1.5;color:var(--dim);max-width:52ch;
-}
-.taken-from{
-  font-size:11px;letter-spacing:.11em;text-transform:uppercase;
-  color:var(--faint);margin-top:9px;
-  display:flex;align-items:center;gap:8px;
-}
 .tag-book{color:var(--gold-dim);border:1px solid rgba(101,14,20,.28);
   border-radius:999px;padding:2px 8px;letter-spacing:.09em}
 
@@ -1049,9 +1058,40 @@ img{max-width:100%;display:block}
 
 /* ── адаптив ──────────────────────────────────────────────────────────── */
 @media (max-width:1050px){
-  .tb-sort select{max-width:170px}
-  .book-page{grid-template-columns:1fr;gap:30px}
-  .bp-left{position:static;max-width:230px}
+  /* Узкий экран: обложке не нужна целая колонка. Рядом с ней встают
+     название, автор и данные книги, а оценки и впечатления уходят вниз во
+     всю ширину. Раньше страница просто складывалась в одну колонку, и
+     справа от обложки оставалась пустая полоса в пол-экрана.
+     display:contents на колонках нужен, чтобы обложка, шапка, данные и тело
+     стали ячейками одной сетки, оставаясь в разметке двумя колонками. */
+  .book-page:not(.book-edit){
+    grid-template-columns:clamp(112px,30vw,208px) 1fr;
+    column-gap:clamp(16px,3.5vw,32px);
+    row-gap:0;
+    align-items:start;
+    grid-template-areas:
+      "banner banner"
+      "figure ident"
+      "figure meta"
+      "body   body";
+  }
+  .book-page:not(.book-edit) .bp-left,
+  .book-page:not(.book-edit) .bp-right{display:contents}
+  .book-page:not(.book-edit) .draft-banner{grid-area:banner}
+  .bp-figure{grid-area:figure}
+  .bp-head{grid-area:ident}
+  .bp-meta{grid-area:meta}
+  .bp-body{grid-area:body;margin-top:clamp(22px,4vh,40px)}
+  /* Заголовок делит строку с обложкой — крупный кегль его больше не держит. */
+  .bp-title{font-size:clamp(23px,4.4vw,40px)}
+  .bp-author{font-size:clamp(15px,2vw,20px)}
+  .bp-facts{margin-top:16px}
+  /* Кнопки стоят в правой колонке рядом с данными — им хватает ширины
+     подписи, растянутые во всю колонку они читались бы как поля. */
+  .bp-actions{flex-direction:row;flex-wrap:wrap}
+  .bp-actions .btn{flex:0 1 auto}
+  .book-edit{grid-template-columns:1fr;gap:30px}
+  .book-edit .bp-left{max-width:230px}
   .lines-grid{columns:1}
   .yr-feature{grid-template-columns:1fr;gap:28px}
   .yr-feature .cover{max-width:190px}
@@ -1062,12 +1102,10 @@ img{max-width:100%;display:block}
 /* Полка никогда не переносится на вторую строку: ряд, плитка и стопка всегда
    в одну линию. Размер книги меняется плавно через clamp() в :root, а
    остальное добирает нахлёст, который fitFrontRow() считает по факту. */
-/* Панель остаётся в одну строку и на узких экранах: убираем ведущие иконки
-   у сортировки и переключателя, укорачиваем подписи, а поиск сжимаем до
-   иконки — он разворачивается обратно, как только в него встают курсором. */
+/* Панель остаётся в одну строку и на узких экранах: у «Добавить книгу»
+   пропадает подпись, а поиск сжимается до иконки — он разворачивается
+   обратно, как только в него встают курсором. */
 @media (max-width:820px){
-  .tb-sort > .ic{display:none}
-  .tb-sort select{max-width:146px}
   /* На узкой строке кнопке хватает одного плюса — подпись прячем. */
   .tb-add{padding:0;width:var(--ctl-h);justify-content:center}
   .tb-add .tb-add-label{display:none}
@@ -1094,13 +1132,6 @@ img{max-width:100%;display:block}
   }
   .tb-search:focus-within{flex:1 1 auto}
   .tb-search:focus-within input{width:auto;flex:1 1 auto;padding-left:2px}
-  .tb-sort select{max-width:124px}
-}
-
-@media (max-width:430px){
-  /* Самые узкие экраны: панель всё ещё в строку, но сортировка ужимается
-     до «Сначала…» — полный текст всё равно виден в раскрытом списке. */
-  .tb-sort select{max-width:92px}
 }
 @media (max-width:620px){
   /* Меню стоит по центру страницы, и в одну строку с кнопкой редактора оно
@@ -1111,8 +1142,36 @@ img{max-width:100%;display:block}
   .navlink{padding:6px 8px;font-size:12px}
   .editor-btn{padding:5px 9px}
   .editor-btn-label{display:none}
-  .imp{grid-template-columns:1fr;gap:10px}
   .yr-bar{grid-template-columns:96px 1fr 30px}
+  /* Впечатления в один столбец: на телефоне колонка кладки шириной с ладонь. */
+  .says{columns:1}
+  /* Таблицу оценок ужимаем, чтобы она помещалась целиком: подписи критериев
+     короткие, а клетки — ровно под двузначное число. */
+  .st th,.st td{padding:6px 3px}
+  .st thead th{font-size:9px;letter-spacing:.03em}
+  /* Имя тоже держится у края: без него прокрученная строка — просто пять
+     чисел неизвестно чьих. */
+  .st-who{
+    position:sticky;left:0;z-index:1;
+    padding-right:8px !important;gap:6px;font-size:13px;
+    background:var(--void-2);
+    box-shadow:9px 0 9px -9px rgba(58,32,20,.22);
+  }
+  .st thead th:first-child{position:sticky;left:0;z-index:1;background:var(--void-2)}
+  .st-v{min-width:28px;height:26px;padding:0 5px;font-size:13px}
+  /* Средний балл остаётся у правого края, пока критерии прокручиваются вбок:
+     это то число, ради которого таблицу и открывают, и уезжать за экран ему
+     нельзя. Фон непрозрачный — под ним проходят клетки. */
+  .st-mean{
+    position:sticky;right:0;z-index:1;
+    font-size:17px;background:var(--void-2);
+    padding-left:9px !important;
+    box-shadow:-9px 0 9px -9px rgba(58,32,20,.22);
+  }
+  /* Кнопки под данными книги встают в строку и по содержимому: растянутая
+     на всю колонку «Поделиться» выглядит как поле ввода, а не как кнопка. */
+  .bp-actions{flex-direction:row;flex-wrap:wrap}
+  .bp-actions .btn{flex:0 1 auto}
 }
 
 /* Невысокие экраны: панель стала двухэтажной, и вертикали не хватает.
@@ -1365,19 +1424,9 @@ input[type="number"]{-moz-appearance:textfield}
   .modal-head{padding:16px}
 }
 
-.bp-avg-empty{color:var(--faint)}
-
 /* ══════════════════════════════════════════════════════════════════════════
    Правка карточки: та же страница, только поля вместо текста
    ══════════════════════════════════════════════════════════════════════════ */
-
-/* шапка карточки: название и кнопка правки на одной линии */
-.bp-head{
-  display:flex;align-items:flex-start;justify-content:space-between;
-  gap:18px;flex-wrap:wrap;
-}
-.bp-head > div{flex:1 1 240px;min-width:0}
-.bp-edit{flex:0 0 auto;margin-top:6px;white-space:nowrap}
 
 /* панель действий редактора — липкая, чтобы «Сохранить» не убегало вниз */
 .be-bar{
@@ -1390,7 +1439,10 @@ input[type="number"]{-moz-appearance:textfield}
   box-shadow:0 10px 26px rgba(var(--shadow),.09);
 }
 .be-bar-note{flex:1 1 220px;min-width:0;font-size:13px;color:var(--dim)}
-.be-bar-actions{display:flex;gap:10px;flex:0 0 auto;flex-wrap:wrap}
+/* Кнопки могут переноситься внутри группы: на телефоне «Удалить книгу»,
+   «Отменить» и «Сохранить» в одну строку не помещались и уезжали за экран —
+   группа не давала себя сжать и потому не переносила их. */
+.be-bar-actions{display:flex;gap:10px;flex:0 1 auto;min-width:0;flex-wrap:wrap}
 
 .be-facts{margin-top:22px;display:flex;flex-direction:column;gap:13px}
 .be-facts .field-row{display:flex;gap:12px}
@@ -1562,55 +1614,61 @@ input[type="number"]{-moz-appearance:textfield}
 .rr-row.rr-yes .rr-key{color:var(--rr-yes);border:1px solid rgba(79,143,102,.45)}
 .rr-row.rr-no  .rr-key{color:var(--rr-no); border:1px solid rgba(192,122,104,.45)}
 
-/* карточки участников: средний балл и пять мини-шкал */
-.mcards{
-  display:grid;
-  grid-template-columns:repeat(auto-fit,minmax(226px,1fr));
-  gap:clamp(12px,1.6vw,20px);
-  margin-top:clamp(12px,1.6vw,20px);
+/* ── кто как оценил ───────────────────────────────────────────────────── */
+/* Таблица вместо колоды карточек: критерии — столбцы, участницы — строки.
+   Лишний человек добавляет строку, а не карточку, и оценки по одному
+   критерию наконец стоят друг под другом. */
+.wg-table{grid-column:1/-1}
+.wg-table .wg-body{align-items:stretch}
+/* Столбцов ровно столько, сколько критериев: на телефоне таблица уезжает
+   вбок внутри своей карточки, а не растягивает страницу. Тень у края
+   появляется сама и только когда есть куда прокручивать: две пары
+   градиентов, из которых «затычки» прокручиваются вместе с содержимым
+   (background-attachment:local) и закрывают тень, пока край на месте. */
+.st-scroll{
+  width:100%;overflow-x:auto;scrollbar-width:thin;
+  background:
+    linear-gradient(to right,var(--void-2) 60%,rgba(255,251,246,0)) left / 26px 100% no-repeat local,
+    linear-gradient(to left,var(--void-2) 60%,rgba(255,251,246,0)) right / 26px 100% no-repeat local,
+    radial-gradient(farthest-side at 0 50%,rgba(58,32,20,.16),rgba(58,32,20,0)) left / 11px 100% no-repeat scroll,
+    radial-gradient(farthest-side at 100% 50%,rgba(58,32,20,.16),rgba(58,32,20,0)) right / 11px 100% no-repeat scroll;
 }
-.mcard{
-  padding:16px 18px 18px;
-  border:1px solid var(--rule);border-radius:20px;
-  background:var(--raise);
+.st{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
+.st th,.st td{padding:7px 6px;font-weight:400}
+.st thead th{
+  font-size:10px;letter-spacing:.11em;text-transform:uppercase;color:var(--faint);
+  text-align:center;white-space:nowrap;
+  border-bottom:1px solid var(--rule);
+  padding-bottom:10px;
 }
-.mcard-head{display:flex;align-items:center;gap:9px;margin-bottom:10px}
-.mcard-name{font-family:var(--serif);font-size:20px;line-height:1;flex:1;min-width:0}
-.mcard-mean{
-  font-family:var(--serif);font-size:24px;line-height:1;color:var(--gold);
-  font-variant-numeric:tabular-nums;
+.st thead th:first-child{width:1%}
+.st tbody tr + tr th,.st tbody tr + tr td{border-top:1px solid var(--rule)}
+.st-who{
+  display:flex;align-items:center;gap:8px;
+  font-size:14px;color:var(--dim);text-align:left;white-space:nowrap;
+  padding-right:14px !important;
 }
-.mcard-rr{
-  display:inline-block;margin-bottom:12px;
-  font-size:10px;letter-spacing:.12em;text-transform:uppercase;
-  padding:2px 9px;border-radius:999px;
+/* Точка «перечитаешь?» — вся отметка целиком: в строке на неё нет места,
+   а подпись есть в подсказке и в блоке впечатлений ниже. */
+.st-rr{width:7px;height:7px;border-radius:50%;flex:0 0 auto}
+.st-rr.yes{background:var(--rr-yes)}
+.st-rr.no{background:var(--rr-no)}
+.st-cell{text-align:center}
+.st-v{
+  display:inline-flex;align-items:center;justify-content:center;
+  min-width:34px;height:28px;padding:0 8px;
+  border-radius:9px;
+  /* Плотность заливки — сама оценка, цвет — цвет участницы. */
+  background:color-mix(in srgb,var(--c,var(--ghost)) var(--fill,30%),transparent);
+  font-size:14px;color:var(--ink);
 }
-.mcard-rr.yes{color:var(--rr-yes);border:1px solid rgba(79,143,102,.4)}
-.mcard-rr.no {color:var(--rr-no); border:1px solid rgba(192,122,104,.4)}
-.mcard-bars{display:flex;flex-direction:column;gap:7px}
-.mb-row{display:grid;grid-template-columns:74px 1fr 20px;align-items:center;gap:10px}
-.mb-name{font-size:11px;color:var(--dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.mb-track{
-  height:9px;border-radius:5px;overflow:hidden;
-  background:rgba(43,28,20,.10);
-  box-shadow:inset 0 1px 2px rgba(58,32,20,.10);
+.st-none{color:var(--faint);font-size:13px}
+.st-mean{
+  text-align:right;white-space:nowrap;
+  font-family:var(--serif);font-size:19px;color:var(--gold);
 }
-/* Цвет участника взят из аватарки и сам по себе пастельный — для полосы он
-   притемняется примесью чернил, иначе заливка теряется на кремовом фоне. */
-.mb-fill{
-  display:block;height:100%;border-radius:5px;
-  background:linear-gradient(90deg,
-    color-mix(in srgb,var(--c,#8a8a8a) 55%,var(--ink)),
-    var(--c,#8a8a8a));
-  box-shadow:0 1px 3px rgba(58,32,20,.22);
-}
-.mb-val{
-  font-size:12px;color:var(--ink);text-align:right;font-weight:500;
-  font-variant-numeric:tabular-nums;
-}
-
-@media (max-width:520px){
-  .mb-row{grid-template-columns:62px 1fr 20px}
+.st thead .st-mean{
+  font-family:var(--sans);font-size:10px;color:var(--faint);
 }
 
 /* ══════════════════════════════════════════════════════════════════════════
