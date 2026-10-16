@@ -789,5 +789,27 @@
         "quote": null
       }
     }
+  },
+  {
+    "id": "eto-testovaya-kniga",
+    "title": "Это тестовая книга",
+    "author": "Автор",
+    "year": 2026,
+    "pages": 134,
+    "genre": "Детектив",
+    "edition": "",
+    "art": {
+      "bg": "#101820",
+      "fg": "#dfe9f0",
+      "acc": "#3e9ad6",
+      "motif": "sun"
+    },
+    "discussed": "2026-10-16",
+    "proposedBy": "liza",
+    "coverQuery": "Это тестовая книга Автор",
+    "cover": null,
+    "isbn": null,
+    "goodreads": null,
+    "reviews": {}
   }
 ]
