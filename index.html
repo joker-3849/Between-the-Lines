@@ -105,14 +105,18 @@
   <p class="foot-mark" id="footNote"></p>
 </footer>
 
-<!-- полоса «Сохранить на сайт»: появляется, когда есть незакоммиченные правки -->
-<div class="save-bar" id="saveBar" hidden>
-  <span id="saveBarNote"></span>
-  <button type="button" class="btn btn-primary" id="saveBarBtn"></button>
+<!-- Полосы внизу страницы. Стопкой, а не каждая сама по себе: они бывают
+     видны одновременно (удалили книгу — и строчка об этом, и отчёт о
+     коммите), а по отдельности ложились друг на друга. -->
+<div class="bar-stack">
+  <!-- короткое сообщение: книгу удалили, полку обновили -->
+  <div class="save-bar notice-bar" id="noticeBar" hidden></div>
+  <!-- отчёт о сохранении: появляется, когда есть незакоммиченные правки -->
+  <div class="save-bar" id="saveBar" hidden>
+    <span id="saveBarNote"></span>
+    <button type="button" class="btn btn-primary" id="saveBarBtn"></button>
+  </div>
 </div>
-
-<!-- полка подтянула чужие правки: короткое пояснение, почему она изменилась -->
-<div class="save-bar live-bar" id="liveBar" hidden>Полка обновилась — кто-то из клуба внёс правки.</div>
 
 <!-- слой для FLIP-перелёта обложки -->
 <div class="flip-layer" id="flipLayer" aria-hidden="true"></div>

@@ -52,3 +52,41 @@ export function closeModal() {
 }
 
 export function initModal() { ensureModal(); }
+
+/**
+ * Спросить «точно?» в окне сайта, а не браузерным confirm. Браузерный
+ * показывает голый текст без оформления и в каждом браузере свой, а
+ * удаление — единственное необратимое действие на сайте, и выглядеть оно
+ * должно как часть страницы, а не как системная ошибка.
+ *
+ * Возвращает промис: true — подтвердили, false — отменили, закрыли крестиком
+ * или нажали Esc.
+ */
+export function confirmModal({ title, text, confirm = 'Удалить', danger = false }) {
+  return new Promise(resolve => {
+    const body = openModal(title, `
+      <p class="confirm-text">${text}</p>
+      <div class="modal-actions">
+        <button type="button" class="btn ${danger ? 'btn-danger' : 'btn-primary'}" id="confirmYes">
+          ${danger ? icon('trash') : icon('check')} ${confirm}
+        </button>
+        <button type="button" class="btn btn-ghost" id="confirmNo">Отмена</button>
+      </div>`, 'modal-confirm');
+
+    let done = false;
+    const finish = ok => { if (!done) { done = true; resolve(ok); } };
+
+    body.querySelector('#confirmYes').addEventListener('click', () => { closeModal(); finish(true); });
+    body.querySelector('#confirmNo').addEventListener('click', () => { closeModal(); finish(false); });
+
+    // Крестик, клик по подложке и Esc закрывают окно мимо наших кнопок —
+    // для вызвавшего это тот же отказ.
+    const overlay = document.getElementById('appModal');
+    const watch = new MutationObserver(() => {
+      if (overlay.hidden) { watch.disconnect(); finish(false); }
+    });
+    watch.observe(overlay, { attributes: true, attributeFilter: ['hidden'] });
+
+    body.querySelector('#confirmNo').focus();
+  });
+}

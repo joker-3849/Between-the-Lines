@@ -13,6 +13,8 @@ import { coverHTML, avatarHTML, esc,
          scorePickerHTML, rereadPickerHTML, wirePickers, readPicked, pickedMean } from './ui.js';
 import { icon, hydrateIcons } from './icons.js';
 import { showBookJSON, grVal } from './addbook.js';
+import { confirmModal } from './modal.js';
+import { canPublish } from './publish.js';
 
 let onDone = () => {};
 let book = null;
@@ -175,15 +177,28 @@ function refreshMean(memberId) {
 
 /* ── удаление ─────────────────────────────────────────────────────────── */
 
-/** Убирает книгу с полки. Как и правки, только в памяти вкладки. */
-function removeBook() {
+/**
+ * Убирает книгу с полки. Спрашиваем подтверждение окном сайта, после него
+ * сразу возвращаемся на полку — книги там уже нет, а внизу остаётся строчка
+ * о том, что именно удалили. Раньше здесь стоял браузерный confirm с
+ * инструкцией «удалите элемент с таким-то id из data/books.json»: она была
+ * верна, пока сайт не умел сохранять сам, а теперь правка уходит коммитом,
+ * и руками лезть в файл не нужно.
+ */
+async function removeBook() {
   const target = book;
   if (!target) return;
-  const ok = window.confirm(
-    `Удалить «${target.title}» с полки?\n\n` +
-    'Книга исчезнет из этой вкладки сразу. Чтобы она не вернулась после '
-    + `перезагрузки, удалите элемент с id "${target.id}" из data/books.json.`);
-  if (!ok) return;
+
+  const ok = await confirmModal({
+    title: 'Удалить книгу?',
+    text: `«${esc(target.title)}» пропадёт с полки`
+      + (canPublish()
+          ? ' у всех: правка уйдёт в репозиторий. Вернуть книгу можно будет, только добавив её заново.'
+          : '. Сохранение с сайта не включено, поэтому пока это изменение видит только эта вкладка.'),
+    confirm: 'Удалить книгу',
+    danger: true
+  });
+  if (!ok || book !== target) return;   // передумали или успели уйти со страницы
 
   dropBook(target.id);
   book = null;

@@ -11,6 +11,7 @@ import { coverOnShelf } from './shelf.js';
 import { showBookJSON } from './addbook.js';
 import { openBookEditor } from './bookedit.js';
 import { openShareModal } from './share.js';
+import { showNotice } from './notice.js';
 import { requireUnlock, editorMode } from './lock.js';
 import { canPublish } from './publish.js';
 
@@ -162,7 +163,13 @@ function render(book) {
     if (!await requireUnlock()) return;
     openBookEditor(book, {
       onDone: (saved, edited, opts) => {
-        if (opts?.deleted) { current = null; deps.onBookChanged?.(); deps.setView('shelf'); return; }
+        if (opts?.deleted) {
+          current = null;
+          deps.onBookChanged?.();
+          deps.setView('shelf');
+          showNotice(`«${edited.title}» удалена с полки.`);
+          return;
+        }
         rerender(book);
       }
     });

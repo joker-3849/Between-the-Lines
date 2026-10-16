@@ -1037,14 +1037,22 @@ img{max-width:100%;display:block}
 }
 .foot-mark .wm-the{font-style:italic;color:inherit;opacity:.72}
 
-/* ── полоса «Сохранить на сайт» ───────────────────────────────────────── */
-/* Плавает над страницей, а не встроена в панель полки: сохранять хочется и
-   сразу после правки книги, где панели с фильтрами нет. */
-.save-bar{
+/* ── полосы внизу страницы ────────────────────────────────────────────── */
+/* Плавают над страницей, а не встроены в панель полки: сохранять хочется и
+   сразу после правки книги, где панели с фильтрами нет. Стопка нужна,
+   потому что полос две и обе бывают видны разом. */
+.bar-stack{
   position:fixed;z-index:120;
   left:50%;bottom:clamp(14px,3vh,28px);transform:translateX(-50%);
-  display:flex;align-items:center;gap:16px;flex-wrap:wrap;justify-content:center;
+  display:flex;flex-direction:column;align-items:center;gap:10px;
   max-width:calc(100vw - 2 * var(--pad));
+  /* Сама стопка шире полос и перехватывала бы клики по странице. */
+  pointer-events:none;
+}
+.bar-stack > *{pointer-events:auto}
+.save-bar{
+  display:flex;align-items:center;gap:16px;flex-wrap:wrap;justify-content:center;
+  max-width:100%;
   padding:10px 12px 10px 20px;
   border:1px solid var(--rule);border-radius:999px;
   background:var(--void-2);
@@ -1056,13 +1064,13 @@ img{max-width:100%;display:block}
 .save-bar .btn{padding:8px 18px}
 .save-bar.ok{color:#3f7a52;border-color:rgba(63,122,82,.4)}
 .save-bar.err{color:#a5432f;border-color:rgba(165,67,47,.45)}
-@keyframes saveBarIn{from{opacity:0;transform:translate(-50%,10px)}to{opacity:1;transform:translate(-50%,0)}}
+@keyframes saveBarIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
 @media (max-width:620px){
   .save-bar{gap:10px;padding:10px 12px;font-size:12px;text-align:center}
 }
 
 /* Та же полоса, но без кнопки: она ничего не просит, только объясняет. */
-.live-bar{padding:10px 20px;z-index:110}
+.notice-bar{padding:10px 20px}
 
 /* ── FLIP-слой ────────────────────────────────────────────────────────── */
 .flip-layer{position:fixed;inset:0;z-index:150;pointer-events:none}
@@ -1395,6 +1403,14 @@ input[type="number"]{-moz-appearance:textfield}
 .modal-foot{
   margin-top:24px;padding-top:18px;
   border-top:1px solid var(--rule);
+}
+
+/* Окно «точно удалить?»: узкое, одна фраза и две кнопки — больше в нём
+   быть нечему. */
+.modal-confirm{max-width:460px}
+.confirm-text{
+  font-size:15px;line-height:1.6;color:var(--dim);
+  margin:-2px 0 22px;
 }
 
 .pass-publish .field-hint{margin-bottom:12px}

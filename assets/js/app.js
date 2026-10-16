@@ -10,6 +10,7 @@ import { isEditing, confirmLeaveEditor } from './bookedit.js';
 import { initSaveBar, syncSaveBar } from './savebar.js';
 import { initLive } from './live.js';
 import { locked, editorMode, requireUnlock, openLockSettings, onEditorChange } from './lock.js';
+import { showNotice } from './notice.js';
 
 const RENDERERS = {
   lines: renderLines,
@@ -100,14 +101,7 @@ function initEditorButton() {
 }
 
 /* Полка меняется сама — без этой строчки это выглядело бы как сбой. */
-let noticeTimer;
-function liveNotice() {
-  const bar = document.getElementById('liveBar');
-  if (!bar) return;
-  bar.hidden = false;
-  clearTimeout(noticeTimer);
-  noticeTimer = setTimeout(() => { bar.hidden = true; }, 5000);
-}
+const liveNotice = () => showNotice('Полка обновилась — кто-то из клуба внёс правки.');
 
 function fail(message) {
   document.getElementById('app').innerHTML =
