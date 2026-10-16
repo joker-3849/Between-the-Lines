@@ -756,41 +756,6 @@
     }
   },
   {
-    "id": "test-2",
-    "title": "Тестовая книга 3",
-    "author": "Тестовая книга 3",
-    "year": null,
-    "pages": null,
-    "genre": "Детектив",
-    "edition": "",
-    "art": {
-      "bg": "#141c1a",
-      "fg": "#e2f0ea",
-      "acc": "#4fae8f",
-      "motif": "frame"
-    },
-    "discussed": "2026-09-06",
-    "proposedBy": null,
-    "coverQuery": "тест 2 тест 2",
-    "cover": null,
-    "isbn": null,
-    "reviews": {
-      "tanya": {
-        "scores": {
-          "plot": 6,
-          "characters": 6,
-          "style": 6,
-          "themes": 6,
-          "emotion": 6
-        },
-        "reread": null,
-        "text": "",
-        "line": null,
-        "quote": null
-      }
-    }
-  },
-  {
     "id": "eto-testovaya-kniga",
     "title": "Это тестовая книга",
     "author": "Автор",
