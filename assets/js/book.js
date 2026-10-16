@@ -183,6 +183,31 @@ export function refreshBook() {
   if (book) rerender(book);
 }
 
+/**
+ * Новая книга: та же страница правки, только пустая. Открывается сразу,
+ * без промежуточного окна — поля и оценки стоят там же, где потом будут
+ * читаться. Пока не сохранили, книги нет нигде: «Отменить» просто
+ * возвращает на полку.
+ */
+export function startNewBook(draft) {
+  current = null;
+  deps.setView('book');
+  openBookEditor(draft, {
+    isNew: true,
+    onDone: (saved, added) => {
+      if (!saved) {
+        // Форму надо убрать руками: книги нет, перерисовывать нечего, а
+        // брошенная разметка осталась бы в скрытом разделе.
+        document.getElementById('view-book').innerHTML = '';
+        deps.setView('shelf');
+        return;
+      }
+      deps.onBookChanged?.();
+      showBook(added.id);          // та же страница, уже в режиме чтения
+    }
+  });
+}
+
 /** Перерисовать карточку после правок — без перелёта обложки. */
 function rerender(book) {
   const view = render(book);

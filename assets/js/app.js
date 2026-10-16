@@ -3,7 +3,7 @@
 import { state, loadData, onDirtyChange } from './data.js';
 import { icon, hydrateIcons } from './icons.js';
 import { initShelf, refreshShelf, refitShelf } from './shelf.js';
-import { initBook, showBook, closeBook, currentBookId, refreshBook } from './book.js';
+import { initBook, showBook, closeBook, currentBookId, refreshBook, startNewBook } from './book.js';
 import { initPages, renderLines, renderChronicle, renderYear } from './pages.js';
 import { initAddBook } from './addbook.js';
 import { isEditing, confirmLeaveEditor } from './bookedit.js';
@@ -128,12 +128,9 @@ function fail(message) {
   });
   initPages(openBook);
   initShelf(openBook);
-  initAddBook({
-    onAdded: book => {
-      refreshShelf();
-      openBook(book.id);
-    }
-  });
+  // «Добавить книгу» открывает ту же страницу правки, что и «Внести
+  // изменения», — окна с формой между ними больше нет.
+  initAddBook({ openEditor: startNewBook });
 
   initSaveBar();
   onDirtyChange(syncSaveBar);

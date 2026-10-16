@@ -1,16 +1,19 @@
 /* Редактор карточки книги: та же страница, только поля вместо текста.
  *
- * Сайт статический и читает полку из JSON в репозитории, поэтому «Сохранить»
- * правит книгу в памяти страницы и помечает её как изменённую — готовый JSON
- * для data/books.json отдаётся отдельной кнопкой, как и у новой книги.
+ * Через него же заводится и новая книга — отдельной формы в окне нет:
+ * слева обложка и поля книги, справа оценки, и всё сразу на своих местах.
+ * Разница между «правкой» и «новой» здесь ровно в трёх вещах: подпись на
+ * кнопке, отсутствие «Удалить» и то, что новая книга попадает на полку
+ * только при сохранении.
  *
  * Баллы ставятся кликом по цифре 1…10, а не вводом с клавиатуры: критерий,
  * под ним ряд кружков. Средний балл нигде не вводится — он пересчитывается
  * на лету из выставленных критериев. */
 
-import { state, memberScore, num, dropBook, markDirty } from './data.js';
+import { state, memberScore, num, dropBook, addDraftBook, freeBookId, markDirty } from './data.js';
 import { coverHTML, avatarHTML, esc,
          scorePickerHTML, rereadPickerHTML, wirePickers, readPicked, pickedMean } from './ui.js';
+import { randomArt } from './covers.js';
 import { icon, hydrateIcons } from './icons.js';
 import { showBookJSON, grVal } from './addbook.js';
 import { confirmModal } from './modal.js';
@@ -18,6 +21,10 @@ import { canPublish } from './publish.js';
 
 let onDone = () => {};
 let book = null;
+let isNew = false;
+/* Обложка правится здесь же, но до «Сохранить» лежит отдельно от книги:
+   иначе «Отменить» оставлял бы перерисованную обложку. */
+let art = null;
 
 const scale = () => state.club.scale || 10;
 
@@ -111,26 +118,67 @@ function memberHTML(m) {
   </section>`;
 }
 
+/* ── обложка ──────────────────────────────────────────────────────────── */
+
+/**
+ * Книга для предпросмотра обложки: поля берутся из формы, а не из
+ * сохранённой книги, иначе набранное название появлялось бы на обложке
+ * только после «Сохранить». Пустые подменяются заглушками — пустая
+ * обложка выглядит сломанной.
+ */
+function preview() {
+  const form = document.getElementById('bookEditForm');
+  const v = id => form?.querySelector(`#be-${id}`)?.value.trim();
+  const sel = form?.querySelector('#be-genre');
+  const genre = sel
+    ? (sel.value === '__custom__' ? v('genre-custom') : sel.value)
+    : book.genre;
+  return {
+    ...book,
+    art: art || book.art,
+    title: (v('title') ?? book.title) || 'Название книги',
+    author: (v('author') ?? book.author) || 'Автор',
+    year: (v('year') ?? book.year) || null,
+    genre: genre || book.genre
+  };
+}
+
+function syncCover() {
+  const box = document.getElementById('beCover');
+  if (box) box.innerHTML = coverHTML(preview(), 'bp-cover');
+}
+
 /* ── сборка страницы ──────────────────────────────────────────────────── */
 
 function render() {
   const view = document.getElementById('view-book');
   view.innerHTML = `<form class="book-page book-edit" id="bookEditForm" novalidate>
     <div class="be-bar">
-      <span class="badge draft">правка</span>
-      <span class="be-bar-note">Меняйте что угодно и нажмите «Сохранить».
-        Средний балл считается сам.</span>
+      <span class="badge draft">${isNew ? 'новая книга' : 'правка'}</span>
+      <span class="be-bar-note">${isNew
+        ? 'Название и автора нужно заполнить, остальное можно дозаполнить потом. '
+          + 'Оценки ставятся справа, обложка рисуется слева.'
+        : 'Меняйте что угодно и нажмите «Сохранить». Средний балл считается сам.'}</span>
       <div class="be-bar-actions">
-        <button type="button" class="btn btn-danger" id="beDelete">
+        ${isNew ? '' : `<button type="button" class="btn btn-danger" id="beDelete">
           ${icon('trash')} Удалить книгу
-        </button>
+        </button>`}
         <button type="button" class="btn btn-ghost" id="beCancel">Отменить</button>
-        <button type="submit" class="btn btn-primary">${icon('device-floppy')} Сохранить</button>
+        <button type="submit" class="btn btn-primary">${isNew
+          ? `${icon('plus')} Добавить на полку`
+          : `${icon('device-floppy')} Сохранить`}</button>
       </div>
     </div>
 
     <div class="bp-left">
-      ${coverHTML(book, 'bp-cover')}
+      <div id="beCover">${coverHTML(preview(), 'bp-cover')}</div>
+      <div class="be-art">
+        <button type="button" class="btn btn-ghost" id="beReroll">
+          ${icon('refresh')} Другая обложка
+        </button>
+        <p class="field-hint">Обложку рисует сайт: цвет и рисунок случайные,
+          название с автором подставляются из полей.</p>
+      </div>
       ${factsFormHTML()}
     </div>
 
@@ -156,13 +204,23 @@ function wire(view) {
   genreSel.addEventListener('change', () => {
     genreCustom.hidden = genreSel.value !== '__custom__';
     if (!genreCustom.hidden) genreCustom.focus();
+    syncCover();
+  });
+
+  // Обложка перерисовывается на каждый набранный знак: это единственный
+  // способ увидеть, как книга встанет на полку, ещё до сохранения.
+  ['title', 'author', 'year', 'genre-custom'].forEach(id =>
+    view.querySelector(`#be-${id}`)?.addEventListener('input', syncCover));
+  view.querySelector('#beReroll').addEventListener('click', () => {
+    art = randomArt();
+    syncCover();
   });
 
   // Кружков полсотни — один делегированный обработчик на всю колонку.
   wirePickers(view.querySelector('.be-members'), refreshMean);
 
   view.querySelector('#beCancel').addEventListener('click', () => finish(false));
-  view.querySelector('#beDelete').addEventListener('click', removeBook);
+  view.querySelector('#beDelete')?.addEventListener('click', removeBook);
   form.addEventListener('submit', e => { e.preventDefault(); save(form); });
 }
 
@@ -244,7 +302,7 @@ function save(form) {
   const genreSel = form.querySelector('#be-genre');
   const genre = genreSel.value === '__custom__' ? v('genre-custom') : genreSel.value;
 
-  Object.assign(book, {
+  const facts = {
     title, author,
     year: v('year') ? Number(v('year')) : null,
     pages: v('pages') ? Number(v('pages')) : null,
@@ -254,18 +312,37 @@ function save(form) {
     goodreads: grVal(v('goodreads')),
     discussed: v('discussed') || book.discussed,
     proposedBy: form.querySelector('#be-by').value || null,
-    reviews: collectReviews(form)
-  });
+    reviews: collectReviews(form),
+    // Книгу без рисунка обложки оставляем без него: пустой ключ в файле
+    // хуже отсутствующего.
+    ...(art ? { art } : {})
+  };
+
+  if (isNew) {
+    // На полку книга попадает только здесь. До «Добавить» её нет ни в
+    // состоянии страницы, ни в списке несохранённого — иначе брошенная
+    // заготовка уехала бы коммитом.
+    finish(true, addDraftBook({
+      ...book, ...facts,
+      id: freeBookId(title),
+      coverQuery: `${title} ${author}`
+    }));
+    return;
+  }
+
+  Object.assign(book, facts);
   if (!book._draft) book._edited = true;
   markDirty('books');
 
   finish(true);
 }
 
-function finish(saved) {
-  const edited = book;
+function finish(saved, result) {
+  const edited = result || book;
   const done = onDone;
   book = null;
+  isNew = false;
+  art = null;
   onDone = () => {};
   done(saved, edited);
 }
@@ -274,6 +351,8 @@ function finish(saved) {
 
 export function openBookEditor(target, opts = {}) {
   book = target;
+  isNew = Boolean(opts.isNew);
+  art = target.art || null;
   onDone = opts.onDone || (() => {});
   render();
 }
@@ -285,7 +364,10 @@ export function isEditing() { return book != null; }
  *  иначе «На полку» или пункт меню молча стирает всё набранное. */
 export function confirmLeaveEditor() {
   if (!book) return true;
-  if (!window.confirm('Правки не сохранены. Уйти со страницы и потерять их?')) return false;
+  const q = isNew
+    ? 'Новая книга не добавлена. Уйти со страницы и потерять набранное?'
+    : 'Правки не сохранены. Уйти со страницы и потерять их?';
+  if (!window.confirm(q)) return false;
   finish(false);
   return true;
 }

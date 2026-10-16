@@ -4,7 +4,7 @@
 import { state, avg, spread, genres, fmtDate, nPlural, nextMeeting, num } from './data.js';
 import { coverHTML, esc } from './ui.js';
 import { icon, hydrateIcons } from './icons.js';
-import { openAddBookModal } from './addbook.js';
+import { openAddBook } from './addbook.js';
 import { editorMode } from './lock.js';
 import { bookcaseHTML } from './bookcase.js';
 
@@ -389,7 +389,7 @@ export function initShelf(openBook) {
     renderShelf();
   });
 
-  document.getElementById('addBookBtn').addEventListener('click', openAddBookModal);
+  document.getElementById('addBookBtn').addEventListener('click', openAddBook);
 
   let resizeT;
   window.addEventListener('resize', () => {
